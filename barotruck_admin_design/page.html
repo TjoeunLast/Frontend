@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>바로트럭 관리자 - 대시보드</title>
+        <link rel = "stylesheet" href="style.css">
+    </head>
+    <body>
+        <nav>
+            <h2>BaroTruck</h2>
+            <div class="nav-top">
+                <div class="admin-profile">
+                    <div class="admin-avatar">A</div>
+                    <div class="admin-info">
+                        <span class="admin-name">최고관리자</span>
+                        <span class="admin-email">admin@barotruck.com</span>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-bottom">
+                <ul style="list-style: none; padding: 0; margin-top: 40px;">
+                    <li style="margin-bottom: 20px;">🏠 대시보드</li>
+                    <li style="margin-bottom: 20px; color: #bdc3c7">📦 주문 관리</li>
+                    <li style="margin-bottom: 20px; color: #bdc3c7">💰 정산 관리</li>
+                    <li style="margin-bottom: 20px; color: #bdc3c7;">📊 통계 분석</li>
+                    <li style="margin-bottom: 20px; color: #bdc3c7;">👤 회원 관리</li>
+                </ul>
+            </div>
+        </nav>
+
+        <main>
+            <h1>관제 현황</h1>
+
+            <div class="stats-container">
+                <div class="stats-card" style="border-color: #3498db;">
+                    <h3>오늘의 신규 오더</h3>
+                    <p>164건</p>
+                </div>
+                <div class="stats-card" style="border-color: #f39c12;">
+                    <h3>배차 대기</h3>
+                    <p>28건</p>
+                </div>
+                <div class="stats-card" style="border-color: #2ecc71;">
+                    <h3>승인 대기 회원</h3>
+                    <p>16명</p>
+                </div>
+                <div class="stats-card" style="border-color: #9b59b6;">
+                    <h3>오늘의 매출</h3>
+                    <p>3,287,000원</p>
+                </div>
+            </div>
+
+            <div class="content-box">
+                <h2>실시간 운송 피드</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>주문번호</th>
+                            <th>상차지</th>
+                            <th>하차지</th>
+                            <th>차량 정보</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th><strong>ORD-2026-0202</strong></th>
+                            <th>군산항</th>
+                            <th>경기 용인시</th>
+                            <th>5톤 카고 (27오 1409)</th>
+                            <th><span class="status-badge status-ing">배차 완료</span></th>
+                        </tr>
+                        <tr>
+                            <th><strong>ORD-2026-0204</strong></th>
+                            <th>서울 중랑구</th>
+                            <th>대구 달서구</th>
+                            <th>11톤 윙바디 (13세 5112)</th>
+                            <th><span class="status-badge status-ing">운송 중</span></th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </body>
+</html>
