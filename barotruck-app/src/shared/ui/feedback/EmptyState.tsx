@@ -8,6 +8,7 @@ type EmptyStateProps = {
   description?: string;
   actionLabel?: string;
   onPressAction?: () => void;
+  icon?: React.ReactNode;
 };
 
 export const EmptyState = memo(function EmptyState({
@@ -15,17 +16,26 @@ export const EmptyState = memo(function EmptyState({
   description,
   actionLabel,
   onPressAction,
+  icon,
 }: EmptyStateProps) {
   const t = useAppTheme();
   const c = t.colors;
 
   return (
     <View style={s.wrap}>
+      {icon && <View style={s.iconArea}>{icon}</View>}
       <Text style={[s.title, { color: c.text.primary }]}>{title}</Text>
-      {description ? <Text style={[s.desc, { color: c.text.secondary }]}>{description}</Text> : null}
+      {description ? (
+        <Text style={[s.desc, { color: c.text.secondary }]}>{description}</Text>
+      ) : null}
       {actionLabel && onPressAction ? (
-        <View style={{ marginTop: 12 }}>
-          <Button title={actionLabel} variant="primary" onPress={onPressAction} />
+        <View style={s.actionArea}>
+          <Button
+            title={actionLabel}
+            variant="outline"
+            onPress={onPressAction}
+            size="md"
+          />
         </View>
       ) : null}
     </View>
@@ -33,7 +43,29 @@ export const EmptyState = memo(function EmptyState({
 });
 
 const s = StyleSheet.create({
-  wrap: { padding: 20, alignItems: "center", gap: 8 },
-  title: { fontSize: 16, fontWeight: "900" },
-  desc: { fontSize: 13, fontWeight: "700", textAlign: "center", lineHeight: 18 },
+  wrap: {
+    flex: 1,
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconArea: {
+    marginBottom: 16,
+    opacity: 0.8,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  desc: {
+    fontSize: 14,
+    fontWeight: "400",
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  actionArea: {
+    marginTop: 24,
+  },
 });
