@@ -55,39 +55,60 @@
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead style="background: #f1f5f9; border-bottom: 1px solid #e2e8f0;">
                         <tr>
-                            <th style="padding: 15px; text-align: left; font-size: 13px; color: #475569;">주문번호</th>
-                            <th style="padding: 15px; text-align: left; font-size: 13px; color: #475569;">상/하차지</th>
-                            <th style="padding: 15px; text-align: left; font-size: 13px; color: #475569;">차량/차주</th>
-                            <th style="padding: 15px; text-align: left; font-size: 13px; color: #475569;">운임</th>
+                            <th style="padding: 15px; text-align: center; font-size: 13px; color: #475569;">주문번호</th>
+                            <th style="padding: 15px; text-align: center; font-size: 13px; color: #475569;">상/하차지</th>
+                            <th style="padding: 15px; text-align: center; font-size: 13px; color: #475569;">요청 화주</th>
+                            <th style="padding: 15px; text-align: center; font-size: 13px; color: #475569;">차량/차주</th>
+                            <th style="padding: 15px; text-align: center; font-size: 13px; color: #475569;">운임</th>
                             <th style="padding: 15px; text-align: center; font-size: 13px; color: #475569;">상태</th>
                         </tr>
                     </thead>
                     <tbody style="font-size: 14px; color: #1e293b;">
-                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 15px; font-weight: 600;">ORD-2026-0202-001</td>
-                            <td style="padding: 15px;">전북 군산 → 경기 용인</td>
-                            <td style="padding: 15px;">5톤 카고 / 오시온</td>
-                            <td style="padding: 15px; font-weight: 600;">290,000원</td>
-                            <td style="padding: 15px; text-align: center;">
-                                <span style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #166534;">운송 완료</span>
+                        <tr style="border-bottom: 1px solid #f1f5f9; transition: all 0.2s;" 
+                            onmouseover="this.style.backgroundColor='#f8fafc'" 
+                            onmouseout="this.style.backgroundColor='transparent'">
+                            <td style="padding: 20px 24px; font-weight: 600; color: #3b82f6;">ORD-2026-0202-001</td>
+                            <td style="padding: 20px 24px;">전북 군산 → 경기 용인</td>
+                            <td style="padding: 20px 24px; color: #475569;">(주)세븐틴물류</td>
+                            <td style="padding: 20px 24px;">
+                                <div style="font-weight: 600;">오시온</div>
+                                <div style="font-size: 12px; color: #94a3b8;">5톤 카고</div>
+                            </td>
+                            <td style="padding: 20px 24px; text-align: right; font-weight: 700; font-size: 15px;">290,000원</td>
+                            <td style="padding: 20px 24px; text-align: center;">
+                                <span style="display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; white-space: nowrap;">운송 완료</span>
                             </td>
                         </tr>
-                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 15px; font-weight: 600;">ORD-2026-0203-002</td>
-                            <td style="padding: 15px;">서울 송파 → 대구 달서</td>
-                            <td style="padding: 15px;">1톤 탑차 / 김대영</td>
-                            <td style="padding: 15px; font-weight: 600;">105,000원</td>
-                            <td style="padding: 15px; text-align: center;">
-                                <span style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #ef4444;">배차 대기</span>
+
+                        <tr style="border-bottom: 1px solid #f1f5f9; transition: all 0.2s;" 
+                            onmouseover="this.style.backgroundColor='#f8fafc'" 
+                            onmouseout="this.style.backgroundColor='transparent'">
+                            <td style="padding: 20px 24px; font-weight: 600; color: #3b82f6;">ORD-2026-0203-002</td>
+                            <td style="padding: 20px 24px;">서울 송파 → 대구 달서</td>
+                            <td style="padding: 20px 24px; color: #475569;">(주)드림통상</td>
+                            <td style="padding: 20px 24px;">
+                                <div style="font-weight: 600;">김대영</div>
+                                <div style="font-size: 12px; color: #94a3b8;">1톤 탑차</div>
+                            </td>
+                            <td style="padding: 20px 24px; text-align: right; font-weight: 700; font-size: 15px;">105,000원</td>
+                            <td style="padding: 20px 24px; text-align: center;">
+                                <span style="display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; white-space: nowrap;">배차 대기</span>
                             </td>
                         </tr>
-                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 15px; font-weight: 600;">ORD-2026-0204-003</td>
-                            <td style="padding: 15px;">경기 과천 → 경남 경주</td>
-                            <td style="padding: 15px;">11톤 윙바디 / 이원희</td>
-                            <td style="padding: 15px; font-weight: 600;">470,000원</td>
-                            <td style="padding: 15px; text-align: center;">
-                                <span style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #e67e22;">운송 중</span>
+
+                        <tr style="border-bottom: 1px solid #f1f5f9; transition: all 0.2s;" 
+                            onmouseover="this.style.backgroundColor='#f8fafc'" 
+                            onmouseout="this.style.backgroundColor='transparent'">
+                            <td style="padding: 20px 24px; font-weight: 600; color: #3b82f6;">ORD-2026-0204-003</td>
+                            <td style="padding: 20px 24px;">경기 과천 → 경남 경주</td>
+                            <td style="padding: 20px 24px; color: #475569;">(주)라이즈택배</td>
+                            <td style="padding: 20px 24px;">
+                                <div style="font-weight: 600;">이원희</div>
+                                <div style="font-size: 12px; color: #94a3b8;">11톤 윙바디</div>
+                            </td>
+                            <td style="padding: 20px 24px; text-align: right; font-weight: 700; font-size: 15px;">470,000원</td>
+                            <td style="padding: 20px 24px; text-align: center;">
+                                <span style="display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; white-space: nowrap;">운송 중</span>
                             </td>
                         </tr>
                     </tbody>
