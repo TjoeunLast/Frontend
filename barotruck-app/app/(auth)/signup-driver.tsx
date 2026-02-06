@@ -28,7 +28,6 @@ export default function SignupDriverScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
-  // ✅ 목업: 로컬 state로 충분
   const [carNo, setCarNo] = useState("");
   const [vehicleType, setVehicleType] = useState<VehicleType | undefined>("cargo");
   const [ton, setTon] = useState<Ton | undefined>("1t");
@@ -113,16 +112,12 @@ export default function SignupDriverScreen() {
     });
   }, [c]);
 
-  const canSubmit =
-    carNo.trim().length > 0 &&
-    !!vehicleType &&
-    !!ton &&
-    careerYears.trim().length > 0;
+  const canSubmit = carNo.trim().length > 0 && !!vehicleType && !!ton && careerYears.trim().length > 0;
 
   const onSubmit = () => {
-    // ✅ 목업: 일단 가입완료 처리만
-    // 여기서 API 붙일 때 react-query로 mutation 연결하면 됨
-    router.replace("/(auth)/login");
+    // ✅ 가입 완료 → 차주 홈
+    router.dismissAll();
+    router.replace("/(driver)/(tabs)");
   };
 
   return (
@@ -147,7 +142,6 @@ export default function SignupDriverScreen() {
 
           <View style={{ height: 18 }} />
 
-          {/* 차량 번호 */}
           <TextField
             label="차량 번호"
             value={carNo}
@@ -159,7 +153,6 @@ export default function SignupDriverScreen() {
 
           <View style={{ height: 16 }} />
 
-          {/* 차종 / 톤수 */}
           <View style={s.row}>
             <View style={{ flex: 1 }}>
               <SelectField
@@ -197,7 +190,6 @@ export default function SignupDriverScreen() {
 
           <View style={{ height: 16 }} />
 
-          {/* 경력 */}
           <TextField
             label="경력 (년)"
             value={careerYears}
@@ -208,8 +200,7 @@ export default function SignupDriverScreen() {
             inputStyle={s.tfInput}
           />
         </ScrollView>
-
-        <View style={s.bottomBar}>
+        <View style={[s.bottomBar, { pointerEvents: "box-none" as any }]}>
           <Button
             title="가입 완료"
             variant="primary"

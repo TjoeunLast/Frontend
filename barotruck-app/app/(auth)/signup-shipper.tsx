@@ -157,7 +157,8 @@ export default function SignupShipperScreen() {
   }, [c]);
 
   const onLookupBiz = () => {
-    Alert.alert("조회", "사업자번호 조회는 API 연결 단계에서 붙일게요.");
+    if (Platform.OS === "web") window.alert("사업자번호 조회는 API 연결 단계에서 붙일게요.");
+    else Alert.alert("조회", "사업자번호 조회는 API 연결 단계에서 붙일게요.");
   };
 
   const canSubmit = (() => {
@@ -171,12 +172,12 @@ export default function SignupShipperScreen() {
   })();
 
   const onSubmit = () => {
-    // 여기서 role/account/shipper 합쳐서 API로 보내면 됨
-    Alert.alert(
-      "가입 완료(목업)",
-      `role=${role}\nemail=${account.email}\nnickname=${shipper.nickname}`
-    );
-    // router.replace("/(auth)/login");
+    // ✅ 여기서 role/account/shipper 합쳐서 API로 보내면 됨(지금은 목업)
+    // ✅ 완료 후: role에 따라 홈으로 이동
+    const to = role === "driver" ? "/(driver)/(tabs)" : "/(shipper)/(tabs)";
+
+    router.dismissAll();
+    router.replace(to);
   };
 
   return (
@@ -293,7 +294,7 @@ export default function SignupShipperScreen() {
           ) : null}
         </ScrollView>
 
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { pointerEvents: "box-none" as any }]}>
           <Button
             title="가입 완료"
             variant="primary"

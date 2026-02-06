@@ -11,7 +11,6 @@ export const appTheme = {
       accentPressed: "#82B82A",
       accentSoft: "#F4FCE7",
 
-      // ✅ 추가: Kakao
       kakao: "#FEE500",
       onKakao: "#191919",
     },

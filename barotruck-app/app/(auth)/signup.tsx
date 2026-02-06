@@ -1,5 +1,7 @@
+// app/(auth)/signup.tsx
 import React, { useMemo, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,9 +22,28 @@ import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
 
 import { useSignupStore, type SignupState } from "@/features/common/auth/model/signupStore";
+import {
+  mockCheckEmailDuplicate,
+  mockSendPhoneOtp,
+  mockVerifyPhoneOtp,
+} from "@/features/common/auth/lib/mockVerify";
 
 type Role = "shipper" | "driver";
 type Step = "role" | "account";
+
+function normalizeEmail(v: string) {
+  return v.trim().toLowerCase();
+}
+function isEmailLike(v: string) {
+  const x = normalizeEmail(v);
+  return x.includes("@") && x.includes(".");
+}
+function digitsOnly(v: string) {
+  return v.replace(/[^0-9]/g, "");
+}
+function isPhoneLike(v: string) {
+  return digitsOnly(v).length >= 10;
+}
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -40,6 +61,19 @@ export default function SignupScreen() {
   const [pw2, setPw2] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+
+  // ✅ 이메일 중복확인
+  const [emailChecked, setEmailChecked] = useState(false);
+  const [emailCheckMsg, setEmailCheckMsg] = useState<string | null>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  // ✅ 전화번호 인증(OTP)
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpMsg, setOtpMsg] = useState<string | null>(null);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   const s = useMemo(() => {
     const S = { xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 36 } as const;
@@ -118,7 +152,7 @@ export default function SignupScreen() {
         color: c.text.secondary,
       } as TextStyle,
 
-      form: { paddingHorizontal: S.lg, paddingTop: S.xl, paddingBottom: 120 } as ViewStyle,
+      form: { paddingHorizontal: S.lg, paddingTop: S.xl, paddingBottom: 180 } as ViewStyle,
 
       label: {
         fontSize: 14,
@@ -151,6 +185,10 @@ export default function SignupScreen() {
         justifyContent: "center",
       } as ViewStyle,
       miniBtnText: { fontSize: 15, fontWeight: "900", color: c.text.primary } as TextStyle,
+
+      hint: { marginTop: 6, fontSize: 12, fontWeight: "800", color: c.text.secondary } as TextStyle,
+      hintOk: { color: c.status.success } as TextStyle,
+      hintBad: { color: c.status.danger } as TextStyle,
 
       bottomBar: {
         position: "absolute",
@@ -191,29 +229,133 @@ export default function SignupScreen() {
     setStep("account");
   };
 
+  const onChangeEmail = (v: string) => {
+    setEmail(v);
+    setEmailChecked(false);
+    setEmailCheckMsg(null);
+  };
+
+  const onChangePhone = (v: string) => {
+    setPhone(v);
+    setOtpSent(false);
+    setOtp("");
+    setOtpVerified(false);
+    setOtpMsg(null);
+  };
+
+  const emailOk = isEmailLike(email);
+  const pwOk = pw.length >= 8;
+  const pw2Ok = pw2.length >= 8;
+  const pwMatch = pw.length > 0 && pw2.length > 0 && pw === pw2;
+  const nameOk = name.trim().length > 0;
+  const phoneOk = isPhoneLike(phone);
+
   const canNext =
     !!role &&
-    email.trim().length > 0 &&
-    pw.length >= 8 &&
-    pw2.length >= 8 &&
-    pw === pw2 &&
-    name.trim().length > 0 &&
-    phone.trim().length > 0;
+    emailOk &&
+    pwOk &&
+    pw2Ok &&
+    pwMatch &&
+    nameOk &&
+    phoneOk &&
+    emailChecked &&
+    otpVerified;
+
+  const handleCheckEmail = async () => {
+    const e = normalizeEmail(email);
+
+    if (!isEmailLike(e)) {
+      setEmailCheckMsg("이메일 형식을 확인해주세요.");
+      setEmailChecked(false);
+      return;
+    }
+
+    try {
+      setCheckingEmail(true);
+      const r = await mockCheckEmailDuplicate(e);
+      if (r.ok) {
+        setEmailChecked(true);
+        setEmailCheckMsg("사용 가능한 이메일이에요.");
+      } else {
+        setEmailChecked(false);
+        setEmailCheckMsg(r.reason ?? "이미 사용 중인 이메일이에요.");
+      }
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    const p = digitsOnly(phone);
+
+    if (!isPhoneLike(phone)) {
+      setOtpMsg("휴대폰 번호를 확인해주세요.");
+      return;
+    }
+
+    try {
+      setSendingOtp(true);
+      const { code } = await mockSendPhoneOtp(p);
+
+      // ✅ 목업: 코드 안내
+      if (Platform.OS === "web") window.alert(`(목업) 인증번호: ${code}`);
+      else Alert.alert("(목업)", `인증번호: ${code}`);
+
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtpMsg("인증번호를 입력해주세요.");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const p = digitsOnly(phone);
+
+    if (!otpSent) {
+      setOtpMsg("인증요청을 먼저 해주세요.");
+      return;
+    }
+    if (otp.trim().length < 4) {
+      setOtpMsg("인증번호를 입력해주세요.");
+      return;
+    }
+
+    try {
+      setVerifyingOtp(true);
+      const r = await mockVerifyPhoneOtp(p, otp.trim());
+      if (r.ok) {
+        setOtpVerified(true);
+        setOtpMsg("인증 완료!");
+      } else {
+        setOtpVerified(false);
+        setOtpMsg(r.reason ?? "인증 실패");
+      }
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
 
   const onNext = () => {
     if (!role) return;
 
     setRoleStore(role);
     setAccount({
-      email,
+      email: normalizeEmail(email),
       password: pw,
-      name,
-      phone,
+      name: name.trim(),
+      phone: phone.trim(),
     });
 
     if (role === "shipper") router.push("/(auth)/signup-shipper");
     else router.push("/(auth)/signup-driver");
   };
+
+  const emailHintStyle =
+    emailCheckMsg && emailChecked ? [s.hint, s.hintOk] : emailCheckMsg ? [s.hint, s.hintBad] : null;
+
+  const otpHintStyle =
+    otpMsg && otpVerified ? [s.hint, s.hintOk] : otpMsg ? [s.hint, s.hintBad] : null;
 
   return (
     <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
@@ -233,10 +375,7 @@ export default function SignupScreen() {
           <View style={s.cardList}>
             <Pressable
               onPress={() => chooseRole("shipper")}
-              style={({ pressed }) => [
-                s.roleCard,
-                pressed && { backgroundColor: c.brand.primarySoft },
-              ]}
+              style={({ pressed }) => [s.roleCard, pressed && { backgroundColor: c.brand.primarySoft }]}
             >
               <View style={s.roleIconCircle}>
                 <Ionicons name="cube-outline" size={24} color={c.text.primary} />
@@ -252,10 +391,7 @@ export default function SignupScreen() {
 
             <Pressable
               onPress={() => chooseRole("driver")}
-              style={({ pressed }) => [
-                s.roleCard,
-                pressed && { backgroundColor: c.brand.primarySoft },
-              ]}
+              style={({ pressed }) => [s.roleCard, pressed && { backgroundColor: c.brand.primarySoft }]}
             >
               <View style={s.roleIconCircle}>
                 <Ionicons name="car-outline" size={24} color={c.text.primary} />
@@ -285,27 +421,35 @@ export default function SignupScreen() {
               <Text style={s.subtitle}>로그인과 연락에 사용됩니다.</Text>
             </View>
 
+            {/* 이메일 */}
             <Text style={s.label}>이메일 (아이디)</Text>
             <View style={s.row}>
               <View style={{ flex: 1 }}>
                 <TextField
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={onChangeEmail}
                   placeholder="example@email.com"
                   autoCapitalize="none"
                   keyboardType="email-address"
                   inputWrapStyle={s.tfWrap}
                   inputStyle={s.tfInput}
+                  errorText={email.length > 0 && !emailOk ? "이메일 형식을 확인해주세요." : undefined}
                 />
+                {emailCheckMsg ? <Text style={emailHintStyle as any}>{emailCheckMsg}</Text> : null}
               </View>
               <View style={s.rowGap} />
-              <Pressable style={s.miniBtn}>
-                <Text style={s.miniBtnText}>중복확인</Text>
+              <Pressable
+                style={s.miniBtn}
+                onPress={handleCheckEmail}
+                disabled={checkingEmail || !emailOk}
+              >
+                <Text style={s.miniBtnText}>{checkingEmail ? "확인중..." : "중복확인"}</Text>
               </Pressable>
             </View>
 
             <View style={{ height: 16 }} />
 
+            {/* 비밀번호 */}
             <Text style={s.label}>비밀번호</Text>
             <TextField
               value={pw}
@@ -315,6 +459,7 @@ export default function SignupScreen() {
               autoCapitalize="none"
               inputWrapStyle={s.tfWrap}
               inputStyle={s.tfInput}
+              errorText={pw.length > 0 && !pwOk ? "비밀번호는 8자리 이상이어야 해요." : undefined}
             />
 
             <View style={{ height: 16 }} />
@@ -328,11 +473,12 @@ export default function SignupScreen() {
               autoCapitalize="none"
               inputWrapStyle={s.tfWrap}
               inputStyle={s.tfInput}
-              errorText={pw2.length > 0 && pw !== pw2 ? "비밀번호가 일치하지 않아요." : undefined}
+              errorText={pw2.length > 0 && !pwMatch ? "비밀번호가 일치하지 않아요." : undefined}
             />
 
             <View style={{ height: 16 }} />
 
+            {/* 이름 */}
             <Text style={s.label}>이름</Text>
             <TextField
               value={name}
@@ -345,26 +491,61 @@ export default function SignupScreen() {
 
             <View style={{ height: 16 }} />
 
+            {/* 전화번호 + OTP */}
             <Text style={s.label}>휴대폰 번호</Text>
             <View style={s.row}>
               <View style={{ flex: 1 }}>
                 <TextField
                   value={phone}
-                  onChangeText={setPhone}
+                  onChangeText={onChangePhone}
                   placeholder="010-1234-5678"
                   keyboardType="phone-pad"
                   inputWrapStyle={s.tfWrap}
                   inputStyle={s.tfInput}
+                  errorText={phone.length > 0 && !phoneOk ? "휴대폰 번호를 확인해주세요." : undefined}
                 />
               </View>
               <View style={s.rowGap} />
-              <Pressable style={s.miniBtn}>
-                <Text style={s.miniBtnText}>인증요청</Text>
+              <Pressable
+                style={s.miniBtn}
+                onPress={handleSendOtp}
+                disabled={sendingOtp || !phoneOk}
+              >
+                <Text style={s.miniBtnText}>{sendingOtp ? "요청중..." : "인증요청"}</Text>
               </Pressable>
             </View>
+
+            {otpSent ? (
+              <>
+                <View style={{ height: 12 }} />
+                <Text style={s.label}>인증번호</Text>
+                <View style={s.row}>
+                  <View style={{ flex: 1 }}>
+                    <TextField
+                      value={otp}
+                      onChangeText={setOtp}
+                      placeholder="6자리 입력"
+                      keyboardType="number-pad"
+                      inputWrapStyle={s.tfWrap}
+                      inputStyle={s.tfInput}
+                    />
+                    {otpMsg ? <Text style={otpHintStyle as any}>{otpMsg}</Text> : null}
+                  </View>
+                  <View style={s.rowGap} />
+                  <Pressable
+                    style={s.miniBtn}
+                    onPress={handleVerifyOtp}
+                    disabled={verifyingOtp || otp.trim().length === 0}
+                  >
+                    <Text style={s.miniBtnText}>{verifyingOtp ? "확인중..." : "확인"}</Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : null}
           </ScrollView>
 
-          <View style={s.bottomBar}>
+          {/* ✅ pointerEvents는 props 말고 style로 */}
+          <View style={[s.bottomBar, { pointerEvents: "box-none" as any }]}>
             <Button
               title="다음"
               variant="primary"
@@ -381,3 +562,4 @@ export default function SignupScreen() {
     </SafeAreaView>
   );
 }
+

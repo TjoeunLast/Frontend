@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState, type PropsWithChildren } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type PropsWithChildren,
+} from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { withAlpha } from "@/shared/utils/color";
@@ -29,21 +37,35 @@ export function ToastProvider({ children }: PropsWithChildren) {
 
   const [toast, setToast] = useState<Toast | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hide = useCallback(() => {
-    Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }).start(() => {
-      setToast(null);
-    });
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 160,
+      useNativeDriver: true,
+    }).start(() => setToast(null));
   }, [opacity]);
 
   const show = useCallback(
     (message: string, tone: ToastTone = "neutral") => {
       const id = String(Date.now());
       setToast({ id, message, tone });
-      Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
 
-      // 2.2초 후 자동 닫힘
-      setTimeout(hide, 2200);
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 160,
+        useNativeDriver: true,
+      }).start();
+
+      // ✅ 중복 타이머 방지
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(hide, 2200);
     },
     [hide, opacity]
   );
@@ -72,7 +94,9 @@ export function ToastProvider({ children }: PropsWithChildren) {
       {children}
 
       {toast ? (
-        <View pointerEvents="none" style={s.portal}>
+        // ✅ pointerEvents는 props가 아니라 style로
+        // ✅ overlay는 터치 통과(box-none)가 가장 안전
+        <View style={[s.portal, { pointerEvents: "box-none" as any }]}>
           <Animated.View style={[s.toast, { backgroundColor: toneStyle.bg, opacity }]}>
             <Text style={[s.text, { color: toneStyle.fg }]} numberOfLines={2}>
               {toast.message}
