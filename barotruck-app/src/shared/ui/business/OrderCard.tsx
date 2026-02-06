@@ -47,7 +47,6 @@ export default function OrderCard(props: OrderCardProps) {
 
   return (
     <>
-           {" "}
       <Card
         onPress={() => setModalOpen(true)}
         style={[
@@ -55,11 +54,8 @@ export default function OrderCard(props: OrderCardProps) {
           isInstant && { borderColor: "#FECACA", backgroundColor: "#FFFBFB" },
         ]}
       >
-               {" "}
         <View style={s.topRow}>
-                   {" "}
           <View style={s.badgeRow}>
-                       {" "}
             {isInstant ? (
               <Badge
                 label="바로 배차"
@@ -83,7 +79,6 @@ export default function OrderCard(props: OrderCardProps) {
                 }}
               />
             ) : null}
-                       {" "}
             <Badge
               label={driveMode === "왕복" ? "왕복" : "편도"}
               tone={driveMode === "왕복" ? "roundTrip" : "oneWay"}
@@ -93,96 +88,70 @@ export default function OrderCard(props: OrderCardProps) {
                 alignItems: "center",
               }}
             />
-                     {" "}
           </View>
-                   {" "}
           <Text style={[s.timeText, { color: c.text.secondary }]}>
-                        {createdAt}         {" "}
+            {createdAt}
           </Text>
-                 {" "}
         </View>
-               {" "}
+
         <View style={s.routeRow}>
-                   {" "}
           <View style={s.locGroup}>
-                       {" "}
             <Text style={[s.locLabel, { color: c.text.secondary }]}>
-                            상차지            {" "}
+              상차지
             </Text>
-                       {" "}
+
             <Text
               style={[s.locName, { color: c.text.primary }]}
               numberOfLines={1}
             >
-                            {startAddr}           {" "}
+              {startAddr}
             </Text>
-                     {" "}
           </View>
-                   {" "}
           <View style={s.arrowArea}>
-                       {" "}
             <View style={[s.distBadge, { backgroundColor: "#F1F5F9" }]}>
-                            <Text style={s.distText}>{distance || "-"}</Text>   
-                     {" "}
+              <Text style={s.distText}>{distance || "-"}</Text>
             </View>
-                       {" "}
             <View style={[s.line, { backgroundColor: "#E2E8F0" }]}>
-                           {" "}
-              <View style={[s.arrowHead, { borderColor: "#E2E8F0" }]} />       
-                 {" "}
+              <View style={[s.arrowHead, { borderColor: "#E2E8F0" }]} />
             </View>
-                     {" "}
           </View>
-                   {" "}
           <View style={[s.locGroup, { alignItems: "flex-end" }]}>
-                       {" "}
             <Text style={[s.locLabel, { color: c.text.secondary }]}>
-                            하차지            {" "}
+              하차지
             </Text>
-                       {" "}
             <Text
               style={[s.locName, { color: c.text.primary, textAlign: "right" }]}
               numberOfLines={1}
             >
-                            {endAddr}           {" "}
+              {endAddr}
             </Text>
-                     {" "}
           </View>
-                 {" "}
         </View>
-               {" "}
         <View style={s.bottomRow}>
-                   {" "}
           <View style={s.infoColumn}>
-                       {" "}
             <Text style={[s.loadDateText, { color: c.text.primary }]}>
-                            {loadDate}           {" "}
+              {loadDate}
             </Text>
-                       {" "}
+
             <Text style={[s.carText, { color: c.text.secondary }]}>
-                            {carInfo}           {" "}
+              {carInfo}
             </Text>
-                     {" "}
           </View>
-                   {" "}
+
           <View style={s.priceColumn}>
-                       {" "}
             <Text style={[s.priceText, { color: highlightColor }]}>
-                            {price}           {" "}
+              {price}
             </Text>
-                       {" "}
+
             <Badge
               label={payMethod}
               tone={payMethod.includes("선착불") ? "payPrepaid" : "payDeferred"}
               style={{ alignSelf: "flex-end" }}
             />
-                     {" "}
           </View>
-                 {" "}
         </View>
-             {" "}
       </Card>
-           {" "}
+
       <OrderDetailModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -190,7 +159,6 @@ export default function OrderCard(props: OrderCardProps) {
         onDispatch={handleDispatch}
         data={props}
       />
-         {" "}
     </>
   );
 }
