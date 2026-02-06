@@ -148,24 +148,6 @@ export default function LoginScreen() {
             textStyle={{ fontSize: 22, fontWeight: "900", letterSpacing: -0.2 }}
           />
 
-          {/* 카카오 버튼 */}
-          <Pressable
-            onPress={onKakao}
-            style={({ pressed }) => [
-              s.kakaoPress,
-              {
-                backgroundColor: pressed ? withAlpha(c.brand.kakao, 0.88) : c.brand.kakao,
-              },
-            ]}
-          >
-            <View style={s.kakaoInner}>
-              <Ionicons name="chatbubble-ellipses" size={22} color={c.brand.onKakao} />
-              <Text style={[s.kakaoText, { color: c.brand.onKakao }]}>
-                카카오로 3초만에 시작하기
-              </Text>
-            </View>
-          </Pressable>
-
           {/* 회원가입 */}
           <View style={s.bottom}>
             <Text style={[s.bottomText, { color: c.text.secondary }]}>아직 계정이 없으신가요?</Text>
