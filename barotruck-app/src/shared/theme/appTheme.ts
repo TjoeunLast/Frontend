@@ -10,6 +10,10 @@ export const appTheme = {
       accentHover: "#93CF30",
       accentPressed: "#82B82A",
       accentSoft: "#F4FCE7",
+
+      // ✅ 추가: Kakao
+      kakao: "#FEE500",
+      onKakao: "#191919",
     },
 
     bg: {

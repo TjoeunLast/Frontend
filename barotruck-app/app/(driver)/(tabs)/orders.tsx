@@ -3,15 +3,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 
-export default function DriverHomeScreen() {
+export default function DriverOrdersScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
   return (
     <SafeAreaView style={[s.screen, { backgroundColor: c.bg.surface }]} edges={["top", "bottom"]}>
       <View style={s.pad}>
-        <Text style={[s.title, { color: c.text.primary }]}>차주 홈</Text>
-        <Text style={[s.sub, { color: c.text.secondary }]}>목업 화면이에요</Text>
+        <Text style={[s.title, { color: c.text.primary }]}>오더</Text>
+        <Text style={[s.sub, { color: c.text.secondary }]}>일감 리스트(목업)</Text>
       </View>
     </SafeAreaView>
   );
