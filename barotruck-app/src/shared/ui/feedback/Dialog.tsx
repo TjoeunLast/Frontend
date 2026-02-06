@@ -8,14 +8,12 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
-import { withAlpha } from "@/shared/utils/color";
 import { Button } from "../base/Button";
-import { Card } from "../base/Card";
 
 type Action = {
   label: string;
   onPress: () => void;
-  variant?: "primary" | "accent" | "outline" | "ghost";
+  variant?: "primary" | "accent" | "outline" | "ghost" | "danger";
 };
 
 type Props = {
@@ -23,8 +21,8 @@ type Props = {
   title: string;
   description?: string;
   onClose: () => void;
-  primary?: Action;     // 오른쪽/강조 액션
-  secondary?: Action;   // 왼쪽/취소 액션
+  primary?: Action;
+  secondary?: Action;
   style?: ViewStyle;
 };
 
@@ -41,39 +39,62 @@ export const Dialog = memo(function Dialog({
   const c = t.colors;
 
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={open}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
       <View style={s.backdropWrap}>
-        <Pressable style={[s.backdrop, { backgroundColor: withAlpha(c.text.primary, 0.45) }]} onPress={onClose} />
-
+        <Pressable
+          style={[s.backdrop, { backgroundColor: "rgba(0,0,0,0.5)" }]}
+          onPress={onClose}
+        />
         <View style={s.center}>
-          <Card padding={16} style={[s.dialog, style]}>
+          <View style={[s.dialog, { backgroundColor: c.bg.surface }, style]}>
             <Text style={[s.title, { color: c.text.primary }]}>{title}</Text>
             {description ? (
-              <Text style={[s.desc, { color: c.text.secondary }]}>{description}</Text>
+              <Text style={[s.desc, { color: c.text.secondary }]}>
+                {description}
+              </Text>
             ) : null}
-
             <View style={s.actions}>
               {secondary ? (
-                <Button
-                  title={secondary.label}
-                  variant={secondary.variant ?? "outline"}
-                  onPress={secondary.onPress}
-                  size="md"
-                />
-              ) : (
-                <Button title="닫기" variant="outline" onPress={onClose} size="md" />
-              )}
-
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title={secondary.label}
+                    variant={secondary.variant ?? "outline"}
+                    onPress={secondary.onPress}
+                    size="md"
+                    fullWidth
+                  />
+                </View>
+              ) : !primary ? (
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title="닫기"
+                    variant="outline"
+                    onPress={onClose}
+                    size="md"
+                    fullWidth
+                  />
+                </View>
+              ) : null}
+              {secondary && primary && <View style={{ width: 10 }} />}
               {primary ? (
-                <Button
-                  title={primary.label}
-                  variant={primary.variant ?? "primary"}
-                  onPress={primary.onPress}
-                  size="md"
-                />
+                <View style={{ flex: 1 }}>
+                  <Button
+                    title={primary.label}
+                    variant={primary.variant ?? "primary"}
+                    onPress={primary.onPress}
+                    size="md"
+                    fullWidth
+                  />
+                </View>
               ) : null}
             </View>
-          </Card>
+          </View>
         </View>
       </View>
     </Modal>
@@ -81,11 +102,41 @@ export const Dialog = memo(function Dialog({
 });
 
 const s = StyleSheet.create({
-  backdropWrap: { flex: 1 },
+  backdropWrap: { flex: 1, justifyContent: "center", alignItems: "center" },
   backdrop: { ...StyleSheet.absoluteFillObject },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 16 },
-  dialog: { width: "100%", maxWidth: 420 },
-  title: { fontSize: 16, fontWeight: "900" },
-  desc: { marginTop: 8, fontSize: 13, fontWeight: "700", lineHeight: 18 },
-  actions: { marginTop: 14, flexDirection: "row", gap: 10, justifyContent: "flex-end" },
+  center: {
+    width: "100%",
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dialog: {
+    width: "100%",
+    maxWidth: 340,
+    borderRadius: 20,
+    padding: 24,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  desc: {
+    fontSize: 14,
+    fontWeight: "400",
+    lineHeight: 20,
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  actions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
 });

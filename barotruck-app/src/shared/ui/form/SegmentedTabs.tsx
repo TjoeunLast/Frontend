@@ -10,12 +10,16 @@ type Props<T extends string> = {
   onChange: (next: T) => void;
 };
 
-function SegmentedTabsInner<T extends string>({ items, value, onChange }: Props<T>) {
+function SegmentedTabsInner<T extends string>({
+  items,
+  value,
+  onChange,
+}: Props<T>) {
   const t = useAppTheme();
   const c = t.colors;
 
   return (
-    <View style={[s.wrap, { backgroundColor: c.bg.surface, borderColor: c.border.default }]}>
+    <View style={[s.wrap, { backgroundColor: c.bg.muted }]}>
       {items.map((it) => {
         const selected = it.key === value;
 
@@ -25,11 +29,19 @@ function SegmentedTabsInner<T extends string>({ items, value, onChange }: Props<
             onPress={() => onChange(it.key)}
             style={({ pressed }) => [
               s.item,
-              selected && { backgroundColor: c.brand.primarySoft },
-              pressed && !selected && { backgroundColor: c.bg.muted },
+              selected && { backgroundColor: c.bg.surface, ...s.shadow },
+              pressed && !selected && { backgroundColor: "rgba(0,0,0,0.05)" },
             ]}
           >
-            <Text style={[s.label, { color: selected ? c.brand.primary : c.text.secondary }]}>
+            <Text
+              style={[
+                s.label,
+                {
+                  color: selected ? c.text.primary : c.text.secondary,
+                  fontWeight: selected ? "700" : "500",
+                },
+              ]}
+            >
               {it.label}
             </Text>
           </Pressable>
@@ -39,22 +51,34 @@ function SegmentedTabsInner<T extends string>({ items, value, onChange }: Props<
   );
 }
 
-// ✅ memo는 제네릭이 깨지기 쉬워서, "타입 안전하게" export를 이렇게 처리
 export const SegmentedTabs = memo(SegmentedTabsInner) as unknown as <
-  T extends string
+  T extends string,
 >(
-  props: Props<T>
+  props: Props<T>,
 ) => React.ReactElement;
 
 const s = StyleSheet.create({
-  wrap: { flexDirection: "row", borderWidth: 1, borderRadius: 14, padding: 4 },
+  wrap: {
+    flexDirection: "row",
+    borderRadius: 12,
+    padding: 4,
+    height: 48,
+  },
   item: {
     flex: 1,
-    height: 36,
-    borderRadius: 10,
+    height: "100%",
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 10,
   },
-  label: { fontSize: 13, fontWeight: "900" },
+  shadow: {
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+  },
+  label: {
+    fontSize: 14,
+  },
 });
