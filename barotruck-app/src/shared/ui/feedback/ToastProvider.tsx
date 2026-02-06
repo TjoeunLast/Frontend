@@ -1,7 +1,14 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState, type PropsWithChildren } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+  type PropsWithChildren,
+} from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
-import { withAlpha } from "@/shared/utils/color";
 
 type ToastTone = "neutral" | "success" | "warning" | "danger" | "info";
 
@@ -26,33 +33,47 @@ export function useToast() {
 export function ToastProvider({ children }: PropsWithChildren) {
   const t = useAppTheme();
   const c = t.colors;
-
   const [toast, setToast] = useState<Toast | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
+  const timerRef = useRef<any>(null);
 
   const hide = useCallback(() => {
-    Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }).start(() => {
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
       setToast(null);
     });
   }, [opacity]);
 
   const show = useCallback(
     (message: string, tone: ToastTone = "neutral") => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+
       const id = String(Date.now());
       setToast({ id, message, tone });
-      Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
 
-      // 2.2초 후 자동 닫힘
-      setTimeout(hide, 2200);
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+
+      timerRef.current = setTimeout(() => {
+        hide();
+        timerRef.current = null;
+      }, 2500);
     },
-    [hide, opacity]
+    [hide, opacity],
   );
 
   const api = useMemo(() => ({ show }), [show]);
 
   const toneStyle = useMemo(() => {
-    if (!toast) return { bg: withAlpha(c.text.primary, 0.92), fg: c.text.inverse };
-
+    if (!toast) return { bg: "#333333", fg: "#FFFFFF" };
     switch (toast.tone) {
       case "success":
         return { bg: c.status.success, fg: c.text.inverse };
@@ -63,18 +84,19 @@ export function ToastProvider({ children }: PropsWithChildren) {
       case "info":
         return { bg: c.status.info, fg: c.text.inverse };
       default:
-        return { bg: withAlpha(c.text.primary, 0.92), fg: c.text.inverse };
+        return { bg: "rgba(30, 30, 30, 0.95)", fg: "#FFFFFF" };
     }
   }, [toast, c]);
 
   return (
     <ToastContext.Provider value={api}>
       {children}
-
       {toast ? (
-        <View pointerEvents="none" style={s.portal}>
-          <Animated.View style={[s.toast, { backgroundColor: toneStyle.bg, opacity }]}>
-            <Text style={[s.text, { color: toneStyle.fg }]} numberOfLines={2}>
+        <View pointerEvents="box-none" style={s.portal}>
+          <Animated.View
+            style={[s.toast, { backgroundColor: toneStyle.bg, opacity }]}
+          >
+            <Text style={[s.text, { color: toneStyle.fg }]}>
               {toast.message}
             </Text>
           </Animated.View>
@@ -89,16 +111,28 @@ const s = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 18,
+    bottom: 46,
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
+    zIndex: 9999,
   },
   toast: {
-    maxWidth: 520,
+    maxWidth: 400,
     width: "100%",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    alignItems: "center",
   },
-  text: { fontSize: 13, fontWeight: "800", lineHeight: 18 },
+  text: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 20,
+  },
 });
