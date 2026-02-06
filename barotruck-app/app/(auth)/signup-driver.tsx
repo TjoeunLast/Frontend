@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,28 +21,40 @@ import { Button } from "@/shared/ui/base/Button";
 import { SelectField } from "@/shared/ui/form/SelectField";
 import { withAlpha } from "@/shared/utils/color";
 
-type VehicleType = "cargo" | "top" | "wing" | "refrigerated";
-type Ton = "1t" | "1.4t" | "2.5t" | "3.5t" | "5t" | "11t" | "25t";
+import { useSignupStore, type VehicleType, type Ton } from "@/features/common/auth/model/signupStore";
+import { useAuthStore } from "@/features/common/auth/model/authStore";
+
+function norm(v: string) {
+  return v.trim();
+}
 
 export default function SignupDriverScreen() {
   const router = useRouter();
   const t = useAppTheme();
   const c = t.colors;
 
+  const account = useSignupStore((s) => s.account);
+  const setDriver = useSignupStore((s) => s.setDriver);
+
+  const checkNicknameAvailable = useAuthStore((s) => s.checkNicknameAvailable);
+  const signUp = useAuthStore((s) => s.signUp);
+
+  const [nickname, setNickname] = useState("");
+  const [nicknameChecked, setNicknameChecked] = useState(false);
+  const [checkingNick, setCheckingNick] = useState(false);
+
   const [carNo, setCarNo] = useState("");
-  const [vehicleType, setVehicleType] = useState<VehicleType | undefined>("cargo");
-  const [ton, setTon] = useState<Ton | undefined>("1t");
+  const [vehicleType, setVehicleType] = useState<VehicleType>("cargo");
+  const [ton, setTon] = useState<Ton>("1t");
   const [careerYears, setCareerYears] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
 
   const s = useMemo(() => {
     return StyleSheet.create({
       screen: { flex: 1, backgroundColor: c.bg.surface } as ViewStyle,
 
-      header: {
-        paddingHorizontal: 18,
-        paddingTop: 10,
-        paddingBottom: 6,
-      } as ViewStyle,
+      header: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 6 } as ViewStyle,
       backBtn: {
         width: 40,
         height: 40,
@@ -50,11 +63,7 @@ export default function SignupDriverScreen() {
         justifyContent: "center",
       } as ViewStyle,
 
-      content: {
-        paddingHorizontal: 18,
-        paddingTop: 8,
-        paddingBottom: 140,
-      } as ViewStyle,
+      content: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 140 } as ViewStyle,
 
       title: {
         fontSize: 26,
@@ -79,12 +88,22 @@ export default function SignupDriverScreen() {
         borderRadius: 18,
         paddingHorizontal: 16,
         backgroundColor: c.bg.surface,
+        borderWidth: 1,
+        borderColor: c.border.default,
       } as ViewStyle,
-      tfInput: {
-        fontSize: 16,
-        fontWeight: "800",
-        paddingVertical: 0,
-      } as TextStyle,
+      tfInput: { fontSize: 16, fontWeight: "800", paddingVertical: 0 } as TextStyle,
+
+      miniBtn: {
+        height: 56,
+        paddingHorizontal: 14,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: c.border.default,
+        backgroundColor: c.bg.muted,
+        alignItems: "center",
+        justifyContent: "center",
+      } as ViewStyle,
+      miniBtnText: { fontSize: 14, fontWeight: "900", color: c.text.primary } as TextStyle,
 
       bottomBar: {
         position: "absolute",
@@ -108,16 +127,84 @@ export default function SignupDriverScreen() {
         shadowOffset: { width: 0, height: 10 },
         elevation: 6,
       } as ViewStyle,
-      ctaText: { fontSize: 18, fontWeight: "900", letterSpacing: -0.2 } as TextStyle,
     });
   }, [c]);
 
-  const canSubmit = carNo.trim().length > 0 && !!vehicleType && !!ton && careerYears.trim().length > 0;
+  const showMsg = (title: string, msg: string) => {
+    if (Platform.OS === "web") window.alert(`${title}\n\n${msg}`);
+    else Alert.alert(title, msg);
+  };
 
-  const onSubmit = () => {
-    // ✅ 가입 완료 → 차주 홈
-    router.dismissAll();
-    router.replace("/(driver)/(tabs)");
+  const onCheckNickname = async () => {
+    const n = norm(nickname);
+    if (!n) return showMsg("확인", "닉네임을 입력해주세요.");
+
+    try {
+      setCheckingNick(true);
+      const ok = await checkNicknameAvailable(n);
+      if (!ok) {
+        setNicknameChecked(false);
+        return showMsg("중복", "이미 사용 중인 닉네임이에요.");
+      }
+      setNicknameChecked(true);
+      showMsg("확인", "사용 가능한 닉네임이에요.");
+    } catch (e: any) {
+      setNicknameChecked(false);
+      showMsg("오류", e?.message ?? "닉네임 확인에 실패했어요.");
+    } finally {
+      setCheckingNick(false);
+    }
+  };
+
+  const canSubmit =
+    norm(nickname).length > 0 &&
+    nicknameChecked &&
+    norm(carNo).length > 0 &&
+    !!vehicleType &&
+    !!ton &&
+    norm(careerYears).length > 0 &&
+    !submitting;
+
+  const onSubmit = async () => {
+    if (!canSubmit) return;
+
+    // signup.tsx에서 저장된 계정 정보가 없으면 막기
+    if (!account.email || !account.password || !account.name) {
+      showMsg("가입 오류", "계정 정보가 없어요. 처음부터 다시 가입해주세요.");
+      router.dismissAll();
+      router.replace("/(auth)/signup");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // ✅ signupStore에 driver 저장
+      const driverPayload = {
+        nickname: norm(nickname),
+        carNo: norm(carNo),
+        vehicleType,
+        ton,
+        careerYears: norm(careerYears),
+      };
+      setDriver(driverPayload);
+
+      // ✅ authStore에 가입 저장(로그인 연동)
+      const newUser = await signUp({
+        email: account.email.trim(),
+        password: account.password,
+        name: account.name.trim(),
+        role: "DRIVER",
+        driver: driverPayload,
+      });
+
+      router.dismissAll();
+      router.replace(newUser.role === "DRIVER" ? "/(driver)/(tabs)" : "/(shipper)/(tabs)");
+    } catch (e: any) {
+      showMsg("가입 실패", e?.message ?? "가입에 실패했어요.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -128,19 +215,36 @@ export default function SignupDriverScreen() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView
-        behavior={Platform.select({ ios: "padding", android: undefined })}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={s.content}
-        >
+      <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
           <Text style={s.title}>차량 정보를{"\n"}입력해주세요.</Text>
           <Text style={s.subtitle}>정확한 배차를 위해 필요합니다.</Text>
 
           <View style={{ height: 18 }} />
+
+          {/* 닉네임 + 중복확인 */}
+          <Text style={{ color: c.text.secondary, fontWeight: "900", fontSize: 13, marginBottom: 6 }}>닉네임</Text>
+          <View style={s.row}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                value={nickname}
+                onChangeText={(v) => {
+                  setNickname(v);
+                  setNicknameChecked(false);
+                }}
+                placeholder="예: 바로트럭기사"
+                autoCapitalize="none"
+                inputWrapStyle={s.tfWrap}
+                inputStyle={s.tfInput}
+              />
+            </View>
+            <View style={s.gap} />
+            <Pressable style={s.miniBtn} onPress={onCheckNickname} disabled={checkingNick}>
+              <Text style={s.miniBtnText}>{checkingNick ? "확인중..." : "중복확인"}</Text>
+            </Pressable>
+          </View>
+
+          <View style={{ height: 16 }} />
 
           <TextField
             label="차량 번호"
@@ -158,7 +262,7 @@ export default function SignupDriverScreen() {
               <SelectField
                 label="차종"
                 value={vehicleType}
-                onChange={setVehicleType}
+                onChange={(v) => v && setVehicleType(v)}
                 options={[
                   { label: "카고", value: "cargo" },
                   { label: "탑차", value: "top" },
@@ -174,7 +278,7 @@ export default function SignupDriverScreen() {
               <SelectField
                 label="톤수"
                 value={ton}
-                onChange={setTon}
+                onChange={(v) => v && setTon(v)}
                 options={[
                   { label: "1톤", value: "1t" },
                   { label: "1.4톤", value: "1.4t" },
@@ -200,16 +304,16 @@ export default function SignupDriverScreen() {
             inputStyle={s.tfInput}
           />
         </ScrollView>
-        <View style={[s.bottomBar, { pointerEvents: "box-none" as any }]}>
+
+        <View style={s.bottomBar}>
           <Button
-            title="가입 완료"
+            title={submitting ? "가입 처리중..." : "가입 완료"}
             variant="primary"
             size="lg"
             fullWidth
             disabled={!canSubmit}
             onPress={onSubmit}
-            containerStyle={s.ctaBtn}
-            textStyle={s.ctaText}
+            style={s.ctaBtn}
           />
         </View>
       </KeyboardAvoidingView>

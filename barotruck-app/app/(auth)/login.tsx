@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,8 +18,7 @@ import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
 
-// ✅ role 읽어와서 분기
-import { useSignupStore, type SignupState } from "@/features/common/auth/model/signupStore";
+import { useAuthStore } from "@/features/common/auth/model/authStore";
 
 const ROUTES = {
   signup: "/(auth)/signup" as const,
@@ -32,23 +32,34 @@ export default function LoginScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
-  const role = useSignupStore((s: SignupState) => s.role);
+  const signIn = useAuthStore((s) => s.signIn);
 
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [autoLogin, setAutoLogin] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const onLogin = () => {
-    // ✅ 목업 로그인: role에 따라 이동
-    if (role === "driver") {
-      router.replace(ROUTES.driverTabs);
-      return;
-    }
-    router.replace(ROUTES.shipperTabs);
+  const canLogin = email.trim().length > 0 && pw.trim().length > 0 && !submitting;
+
+  const showError = (msg: string) => {
+    if (Platform.OS === "web") window.alert(msg);
+    else Alert.alert("로그인 실패", msg);
   };
 
-  const onKakao = () => {
-    // TODO: 카카오 OAuth 연결
+  const onLogin = async () => {
+    if (!canLogin) return;
+
+    try {
+      setSubmitting(true);
+      const user = await signIn({ email: email.trim(), password: pw,remember: autoLogin, });
+
+      router.dismissAll();
+      router.replace(user.role === "DRIVER" ? ROUTES.driverTabs : ROUTES.shipperTabs);
+    } catch (e: any) {
+      showError(e?.message ?? "로그인에 실패했어요.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -62,98 +73,79 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={s.content}
         >
-          {/* 로고/카피 */}
-          <View style={s.brandWrap}>
-            <Text style={[s.brandTitle, { color: c.brand.primary }]}>Baro Truck</Text>
-            <Text style={[s.brandSubtitle, { color: c.text.secondary }]}>
-              빠르고 간편한 화물 배차의 시작
-            </Text>
-          </View>
+          <View style={s.container}>
+            <View style={s.brandWrap}>
+              <Text style={[s.brandTitle, { color: c.brand.primary }]}>Baro Truck</Text>
+              <Text style={[s.brandSubtitle, { color: c.text.secondary }]}>
+                빠르고 간편한 화물 배차의 시작
+              </Text>
+            </View>
 
-          {/* 입력 */}
-          <TextField
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="아이디 (휴대폰 번호)"
-            keyboardType="phone-pad"
-            autoCapitalize="none"
-            inputWrapStyle={[
-              s.tfWrap,
-              {
+            <TextField
+              value={email}
+              onChangeText={setEmail}
+              placeholder="이메일"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              inputWrapStyle={[
+                s.inputWrap,
+                { backgroundColor: c.bg.surface, borderColor: c.border.default },
+              ]}
+              inputStyle={s.tfInput}
+            />
+
+            <View style={{ height: 12 }} />
+
+            <TextField
+              value={pw}
+              onChangeText={setPw}
+              placeholder="비밀번호"
+              secureTextEntry
+              autoCapitalize="none"
+              inputWrapStyle={[
+                s.inputWrap,
+                { backgroundColor: c.bg.surface, borderColor: c.border.default },
+              ]}
+              inputStyle={s.tfInput}
+            />
+
+            <View style={s.row}>
+              <Pressable onPress={() => setAutoLogin((v) => !v)} style={s.checkboxRow} hitSlop={10}>
+                <View style={[s.checkboxBox, { borderColor: c.border.default }]}>
+                  {autoLogin ? <Ionicons name="checkmark" size={16} color={c.brand.primary} /> : null}
+                </View>
+                <Text style={[s.checkboxLabel, { color: c.text.primary }]}>자동 로그인</Text>
+              </Pressable>
+
+              <Pressable onPress={() => router.push(ROUTES.resetPw)} hitSlop={10}>
+                <Text style={[s.link, { color: c.text.secondary }]}>비밀번호 찾기</Text>
+              </Pressable>
+            </View>
+
+            <Button
+              title={submitting ? "로그인 중..." : "로그인"}
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={!canLogin}
+              onPress={onLogin}
+              style={{
+                height: 64,
                 borderRadius: 18,
-                paddingHorizontal: 18,
-                minHeight: 72,
-                backgroundColor: c.bg.surface,
-                borderWidth: 1,
-                borderColor: c.border.default,
-              },
-            ]}
-            inputStyle={s.tfInput}
-          />
+                shadowColor: withAlpha(c.brand.primary, 0.25),
+                shadowOpacity: 1,
+                shadowRadius: 14,
+                shadowOffset: { width: 0, height: 8 },
+                elevation: 5,
+              }}
+            />
 
-          <View style={{ height: 14 }} />
-
-          <TextField
-            value={pw}
-            onChangeText={setPw}
-            placeholder="비밀번호"
-            secureTextEntry
-            autoCapitalize="none"
-            inputWrapStyle={[
-              s.tfWrap,
-              {
-                borderRadius: 18,
-                paddingHorizontal: 18,
-                minHeight: 72,
-                backgroundColor: c.bg.surface,
-                borderWidth: 1,
-                borderColor: c.border.default,
-              },
-            ]}
-            inputStyle={s.tfInput}
-          />
-
-          {/* 옵션 row */}
-          <View style={s.row}>
-            <Pressable onPress={() => setAutoLogin((v) => !v)} style={s.checkboxRow} hitSlop={10}>
-              <View style={[s.checkboxBox, { borderColor: c.border.default }]}>
-                {autoLogin ? (
-                  <Ionicons name="checkmark" size={16} color={c.brand.primary} />
-                ) : null}
-              </View>
-              <Text style={[s.checkboxLabel, { color: c.text.primary }]}>자동 로그인</Text>
-            </Pressable>
-
-            <Pressable onPress={() => router.push(ROUTES.resetPw)} hitSlop={10}>
-              <Text style={[s.link, { color: c.text.secondary }]}>비밀번호 찾기</Text>
-            </Pressable>
-          </View>
-
-          {/* 로그인 버튼 */}
-          <Button
-            title="로그인"
-            variant="primary"
-            size="lg"
-            fullWidth
-            onPress={onLogin}
-            containerStyle={{
-              height: 76,
-              borderRadius: 20,
-              shadowColor: withAlpha(c.brand.primary, 0.35),
-              shadowOpacity: 1,
-              shadowRadius: 18,
-              shadowOffset: { width: 0, height: 10 },
-              elevation: 6,
-            }}
-            textStyle={{ fontSize: 22, fontWeight: "900", letterSpacing: -0.2 }}
-          />
-
-          {/* 회원가입 */}
-          <View style={s.bottom}>
-            <Text style={[s.bottomText, { color: c.text.secondary }]}>아직 계정이 없으신가요?</Text>
-            <Pressable onPress={() => router.push(ROUTES.signup)} hitSlop={10}>
-              <Text style={[s.bottomLink, { color: c.brand.primary }]}>회원가입</Text>
-            </Pressable>
+            <View style={s.bottom}>
+              <Text style={[s.bottomText, { color: c.text.secondary }]}>아직 계정이 없으신가요?</Text>
+              <Pressable onPress={() => router.push(ROUTES.signup)} hitSlop={10}>
+                <Text style={[s.bottomLink, { color: c.brand.primary }]}>회원가입</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -164,16 +156,24 @@ export default function LoginScreen() {
 const s = StyleSheet.create({
   screen: { flex: 1 },
   content: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 44,
     paddingBottom: 28,
+    alignItems: "center",
   },
+  container: { width: "100%", maxWidth: 520 },
 
-  brandWrap: { alignItems: "center", marginTop: 28, marginBottom: 28 },
+  brandWrap: { alignItems: "center", marginTop: 16, marginBottom: 22 },
   brandTitle: { fontSize: 42, fontWeight: "900", letterSpacing: -0.4 },
   brandSubtitle: { marginTop: 10, fontSize: 16, fontWeight: "700" },
 
-  tfWrap: {},
+  inputWrap: {
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    minHeight: 60,
+    borderWidth: 1,
+  },
   tfInput: { fontSize: 18, fontWeight: "800", paddingVertical: 0 },
 
   row: {
@@ -181,9 +181,8 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: 12,
-    marginBottom: 24,
+    marginBottom: 18,
   },
-
   checkboxRow: { flexDirection: "row", alignItems: "center" },
   checkboxBox: {
     width: 22,
@@ -195,22 +194,10 @@ const s = StyleSheet.create({
     marginRight: 10,
   },
   checkboxLabel: { fontSize: 16, fontWeight: "700" },
-
   link: { fontSize: 16, fontWeight: "700", textDecorationLine: "underline" },
 
-  kakaoPress: {
-    height: 76,
-    borderRadius: 20,
-    alignSelf: "stretch",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 14,
-  },
-  kakaoInner: { flexDirection: "row", alignItems: "center" },
-  kakaoText: { marginLeft: 12, fontSize: 20, fontWeight: "900", letterSpacing: -0.2 },
-
   bottom: {
-    marginTop: 26,
+    marginTop: 22,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
