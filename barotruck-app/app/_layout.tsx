@@ -1,18 +1,10 @@
-// app/_layout.tsx
-import React, { useEffect } from "react";
+// app/_layout.tsx (핵심 구조 예시)
+import React from "react";
 import { Stack } from "expo-router";
-
 import { ThemeProvider } from "@/shared/theme/ThemeProvider";
-import { ToastProvider } from "@/shared/ui";
-import { useAuthStore } from "@/features/common/auth/model/authStore";
+import { ToastProvider } from "@/shared/ui/feedback/ToastProvider";
 
 export default function RootLayout() {
-  const hydrate = useAuthStore((s) => s.hydrate);
-
-  useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
   return (
     <ThemeProvider>
       <ToastProvider>

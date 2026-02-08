@@ -1,11 +1,14 @@
+// src/shared/theme/ThemeProvider.tsx
 import React, { createContext, useMemo, type PropsWithChildren } from "react";
 import { appTheme, type AppTheme } from "./appTheme";
 
-export const ThemeContext = createContext<AppTheme>(appTheme);
+type ThemeContextValue = AppTheme;
+
+export const ThemeContext = createContext<ThemeContextValue>(appTheme);
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  // 나중에 다크모드, 유저 설정 붙일 때 여기서 theme 바꿔주면 됨
-  const value = useMemo(() => appTheme, []);
+  // 추후 다크모드/토큰 확장 대비해서 useMemo만 유지
+  const theme = useMemo(() => appTheme, []);
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }

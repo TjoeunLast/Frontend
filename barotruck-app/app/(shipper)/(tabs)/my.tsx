@@ -114,7 +114,7 @@ export default function ShipperMyScreen() {
           fullWidth
           loading={loading}
           onPress={onLogout}
-          containerStyle={s.logoutBtn}
+          Style={s.logoutBtn}
           textStyle={s.logoutText}
         />
       </View>
