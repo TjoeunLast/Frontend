@@ -19,7 +19,7 @@ export default function MyScreen() {
 
   useEffect(() => {
     // 추천 오더 데이터를 API로부터 직접 호출하여 상태 업데이트
-    OrderService.getRecommendedOrders()
+    OrderService.getAvailableOrders()
       .then(setOrders)
       .catch(console.error);
   }, []);
