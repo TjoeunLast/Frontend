@@ -58,6 +58,12 @@ export const OrderService = {
     return res.data;
   },
 
+  /** 2. 차주: 배차 가능한 오더 목록 조회 */
+  getAvailableOrders: async (): Promise<OrderResponse[]> => {
+    const res = await apiClient.get(`${API_BASE}/available`);
+    return res.data;
+  },
+
   // 차주: 오더 수락
   acceptOrder: async (orderId: number): Promise<void> => {
     await apiClient.patch(`${API_BASE}/${orderId}/accept`);
