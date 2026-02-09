@@ -8,12 +8,13 @@ export function ExternalLink(
 ) {
   return (
     <Link
-      target="_blank"
+      target="_blank" // 웹 환경: 새 탭에서 열기
       {...props}
       // @ts-expect-error: External URLs are not typed.
       href={props.href}
       onPress={(e) => {
         if (Platform.OS !== 'web') {
+          // [중요] 네이티브 앱 환경일 때 처리
           // Prevent the default behavior of linking to the default browser on native.
           e.preventDefault();
           // Open the link in an in-app browser.

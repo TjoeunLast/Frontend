@@ -5,13 +5,14 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { Button, Card } from "@/shared/ui/base";
 
 export default function Index() {
-  const t = useAppTheme();
-  const c = t.colors;
-  const router = useRouter();
+  const t = useAppTheme(); // 테마 객체 가져오기
+  const c = t.colors; // 색상 팔레트 추출
+  const router = useRouter(); // Expo Router 네비게이션 도구
 
   return (
     <View style={[s.container, { backgroundColor: c.bg.canvas }]}>
       <ScrollView contentContainerStyle={s.scrollContent}>
+        {/* 헤더: 로고 및 설명 */}
         <View style={s.header}>
           <Text style={[s.logo, { color: c.brand.primary }]}>BARO TRUCK</Text>
           <Text style={[s.sub, { color: c.text.secondary }]}>
@@ -19,6 +20,7 @@ export default function Index() {
           </Text>
         </View>
 
+        {/* 섹션 1: 실제 서비스 경로 */}
         <Card style={s.card}>
           <Text style={[s.sectionTitle, { color: c.text.primary }]}>
             🚀 실 서비스 화면
@@ -29,7 +31,7 @@ export default function Index() {
               variant="primary"
               size="lg"
               fullWidth
-              onPress={() => router.push("/(driver)/(tabs)")}
+              onPress={() => router.push("/(driver)/(tabs)/my")}
             />
             <Button
               title="화주(고객) 홈 이동"
@@ -41,6 +43,7 @@ export default function Index() {
           </View>
         </Card>
 
+        {/* 섹션 2: 개발자 도구 */}
         <Card style={s.card}>
           <Text style={[s.sectionTitle, { color: c.text.primary }]}>
             🛠 개발자 도구
