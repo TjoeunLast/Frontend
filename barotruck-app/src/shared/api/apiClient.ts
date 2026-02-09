@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store'; // 또는 AsyncStorage
 
 const apiClient = axios.create({
   // 로컬 IP 주소 사용 권장 (예: http://192.168.x.x:8080)
-  baseURL: 'http://localhost:8081', 
+  baseURL: 'http://192.168.0.15:8081', 
 });
 
 // 요청 인터셉터: 모든 API 요청 직전에 실행됨
