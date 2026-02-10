@@ -17,10 +17,10 @@ export default function DriverHomeScreen() {
 
   // 2. 데이터 페칭 (컴포넌트 마운트 시 실행)
   useEffect(() => {
-    // OrderController의 /api/v1/orders/recommended 엔드포인트를 호출하도록 설계된 서비스 메서드 사용
+    // OrderController의 /api/v1/orders/recommended 엔드포인트를 호출
     OrderService.getRecommendedOrders()
-      .then(setOrders) // 성공 시 받아온 리스트(List<OrderResponse>)를 상태에 저장
-      .catch(console.error); // 에러 발생 시 콘솔 출력
+      .then(setOrders)
+      .catch(console.error);
   }, []);
 
   return (
@@ -30,39 +30,37 @@ export default function DriverHomeScreen() {
       <View style={styles.header}>
         <Text style={styles.logoText}>BARO</Text>
         <View style={styles.headerIcons}>
-          {/* 테마의 기본 텍스트 색상을 아이콘에 적용 */}
           <MessageCircle size={24} color={c.text.primary} />
           <Bell size={24} color={c.text.primary} />
         </View>
       </View>
 
       {/* --- 스크롤 가능한 메인 콘텐츠 영역 --- */}
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* 수익 요약 카드 (현재는 정적 UI이나 추후 정산 API와 연결 가능) */}
-        {/* c.brand.primary를 사용하여 앱의 브랜드 색상(보라색 등)을 배경으로 적용 */}
+        {/* 수정된 수익 요약 카드 (하드코딩 데이터 적용) */}
         <View style={[styles.incomeCard, { backgroundColor: c.brand.primary }]}>
-          <Text style={styles.incomeTitle}>오늘의 목표</Text>
-          <Text style={styles.incomeAmount}>안전 운행 하세요!</Text>
+          <View style={styles.incomeHeader}>
+            <Text style={styles.incomeTitle}>2월 예상 수익</Text>
+            {/* 상승률 뱃지 추가 */}
+            <View style={styles.incomeBadge}>
+              <Text style={styles.incomeBadgeText}>+8.5%</Text>
+            </View>
+          </View>
+          
+          <Text style={styles.incomeAmount}>3,540,000원</Text>
+          
+          {/* 하단 목표 메시지 추가 */}
+          <Text style={styles.incomeSub}>목표 달성까지 46만원 남았어요!</Text>
         </View>
 
         {/* --- 추천 오더 리스트 영역 --- */}
         <View style={styles.orderList}>
-          {/* 받아온 orders 배열을 순회하며 OrderCard 컴포넌트로 변환 */}
+          <Text style={[styles.sectionTitle, { color: c.text.primary }]}>맞춤 추천 오더</Text>
           {orders.map((order) => (
             <OrderCard
-              key={order.orderId} // 고유 식별자 설정
-              startAddr={order.startAddr} // 상차지 주소 (OrderSnapshot 기반)
-              endAddr={order.endAddr}     // 하차지 주소 (OrderSnapshot 기반)
-              // 미터(m) 단위의 거리를 킬로미터(km)로 변환하여 소수점 첫째 자리까지 표시
-              distance={`${(order.distance / 1000).toFixed(1)}km`} 
-              // 운송료를 지역화 포맷(콤마 포함)으로 변환
-              price={`${order.basePrice.toLocaleString()}원`}
-              // 차량 톤수와 종류 합치기 (예: "11톤 윙바디")
-              carInfo={`${order.reqTonnage} ${order.reqCarType}`}
-              loadDate={order.startSchedule} // 상차 일정 정보
-              payMethod={order.payMethod}     // 결제 방식 정보
-              createdAt={order.createdAt}    // 오더 등록 시간
+              key={order.orderId}
+              {...order}
             />
           ))}
         </View>
@@ -79,37 +77,74 @@ const styles = StyleSheet.create({
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
-    padding: 20, 
-    paddingTop: 60 // 상단 상태표시줄 영역 확보
+    paddingHorizontal: 20, 
+    paddingTop: 60,
+    paddingBottom: 20
   },
   logoText: { 
     fontSize: 22, 
     fontWeight: '900', 
-    color: '#5D5FEF' // 로고의 강조 색상
+    color: '#4E46E5' // 브랜드 컬러에 맞춰 수정
   },
   headerIcons: { 
     flexDirection: 'row', 
     gap: 15 
   },
   scrollContent: { 
-    padding: 20 
+    paddingHorizontal: 20,
+    paddingBottom: 30
   },
   incomeCard: { 
     padding: 24, 
-    borderRadius: 20, 
-    marginBottom: 20 
+    borderRadius: 24, // 조금 더 부드러운 라운드 적용
+    marginBottom: 24,
+    // 그림자 효과 추가
+    elevation: 8,
+    shadowColor: '#4E46E5',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+  },
+  incomeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16
   },
   incomeTitle: { 
     color: '#FFF', 
-    opacity: 0.8 
+    opacity: 0.9,
+    fontSize: 14,
+    fontWeight: '500'
+  },
+  incomeBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  incomeBadgeText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '700'
   },
   incomeAmount: { 
     color: '#FFF', 
-    fontSize: 24, 
+    fontSize: 32, // 강조를 위해 폰트 크기 확대
     fontWeight: '800', 
-    marginTop: 8 
+    marginBottom: 4 
+  },
+  incomeSub: {
+    color: '#FFF',
+    fontSize: 13,
+    opacity: 0.7
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16
   },
   orderList: { 
-    gap: 16 // 카드 사이의 간격 설정
+    gap: 16
   }
 });
