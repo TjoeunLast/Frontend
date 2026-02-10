@@ -2,14 +2,14 @@ import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 
-export default function ShipperHomeScreen() {
+export default function ShipperSettlementScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
   return (
     <View style={[s.wrap, { backgroundColor: c.bg.surface }]}>
-      <Text style={[s.title, { color: c.text.primary }]}>홈</Text>
-      <Text style={[s.sub, { color: c.text.secondary }]}>화주 홈(목업)</Text>
+      <Text style={[s.title, { color: c.text.primary }]}>정산내역</Text>
+      <Text style={[s.sub, { color: c.text.secondary }]}>정산 리스트(목업)</Text>
     </View>
   );
 }

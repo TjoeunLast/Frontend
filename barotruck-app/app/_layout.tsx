@@ -1,8 +1,8 @@
+// app/_layout.tsx 
 import React from "react";
 import { Stack } from "expo-router";
-
 import { ThemeProvider } from "@/shared/theme/ThemeProvider";
-import { ToastProvider } from "@/shared/ui"; 
+import { ToastProvider } from "@/shared/ui/feedback/ToastProvider";
 
 export default function RootLayout() {
   return (
