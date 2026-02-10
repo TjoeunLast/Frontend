@@ -1,4 +1,4 @@
-// srv/festures/commen/SingupDriverScrean.tsx
+// srv/features/common/auth/ui/SignupDriverScreen.tsx
 import React, { useMemo, useState } from "react";
 import {
   Alert,

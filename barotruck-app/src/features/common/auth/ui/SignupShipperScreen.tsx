@@ -1,4 +1,4 @@
-// srv/festures/commen/SingupShipperScrean.tsx
+// srv/features/common/auth/ui/SignupShipperScreen.tsx
 import React, { useMemo, useState } from "react";
 import {
   Alert,

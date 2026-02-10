@@ -1,4 +1,4 @@
-// srv/festures/commen/SingupScrean.tsx
+// srv/festures/commen/auth/ui/SingupScrean.tsx
 import React, { useMemo, useState } from "react";
 import {
   Alert,

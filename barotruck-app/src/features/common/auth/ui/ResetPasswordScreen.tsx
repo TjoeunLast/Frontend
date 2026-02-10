@@ -29,9 +29,6 @@ function isEmailLike(v: string) {
   const x = normalizeEmail(v);
   return x.includes("@") && x.includes(".");
 }
-function genCode6() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
 function showMsg(title: string, msg: string) {
   if (Platform.OS === "web") window.alert(`${title}\n\n${msg}`);
   else Alert.alert(title, msg);
@@ -42,13 +39,18 @@ export default function ResetPasswordScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
-  const resetPassword = useAuthStore((s) => (s as any).resetPassword);
+  const requestPasswordReset = useAuthStore((s) => s.requestPasswordReset);
+  const resetPasswordWithCode = useAuthStore((s) => s.resetPasswordWithCode);
 
   const [email, setEmail] = useState("");
   const [requested, setRequested] = useState(false);
+
   const [code, setCode] = useState<string | null>(null);
+
   const [codeInput, setCodeInput] = useState("");
   const [verified, setVerified] = useState(false);
+
+  const [verifiedCode, setVerifiedCode] = useState<string | null>(null);
 
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
@@ -152,39 +154,67 @@ export default function ResetPasswordScreen() {
     });
   }, [c]);
 
-  const onRequest = () => {
-    if (!emailOk) return showMsg("이메일 확인", "이메일 형식을 확인해주세요.");
-    const otp = genCode6();
-    setRequested(true);
-    setCode(otp);
-    setVerified(false);
+  const resetLocalState = () => {
+    setRequested(false);
+    setCode(null);
     setCodeInput("");
-    showMsg("인증요청(목업)", `인증번호: ${otp}\n(드래그로 복사 가능)`);
+    setVerified(false);
+    setVerifiedCode(null);
+    setPw("");
+    setPw2("");
+  };
+
+  const onRequest = async () => {
+    if (!emailOk) return showMsg("이메일 확인", "이메일 형식을 확인해주세요.");
+
+    try {
+      setSubmitting(true);
+
+      const otp = await requestPasswordReset(normalizeEmail(email));
+
+      setRequested(true);
+      setCode(otp);
+      setVerified(false);
+      setVerifiedCode(null);
+      setCodeInput("");
+
+      showMsg("인증요청(목업)", `인증번호: ${otp}\n(드래그로 복사 가능)`);
+    } catch (e: any) {
+      showMsg("오류", e?.message ?? "인증요청에 실패했어요.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const onVerify = () => {
     if (!requested || !code) return;
-    if (codeInput.trim() === code) {
+
+    const typed = codeInput.trim();
+    if (typed === code) {
       setVerified(true);
+      setVerifiedCode(typed);
       showMsg("인증 완료", "인증이 완료됐어요. 새 비밀번호를 설정해주세요.");
     } else {
       showMsg("인증 실패", "인증번호가 올바르지 않아요.");
     }
   };
 
-  const canSubmit = verified && pwOk && pwMatch && !submitting;
+  const canSubmit = verified && !!verifiedCode && pwOk && pwMatch && !submitting;
 
   const onSubmit = async () => {
-    if (!canSubmit) return;
+    if (!canSubmit || !verifiedCode) return;
 
     try {
       setSubmitting(true);
-      if (typeof resetPassword !== "function") {
-        throw new Error("authStore에 resetPassword가 없어요. 아래 4번 코드도 추가해주세요.");
-      }
-      await resetPassword({ email: normalizeEmail(email), newPassword: pw });
+
+      await resetPasswordWithCode({
+        email: normalizeEmail(email),
+        code: verifiedCode, 
+        newPassword: pw,
+      });
 
       showMsg("변경 완료", "비밀번호가 변경됐어요. 로그인해주세요.");
+      resetLocalState();
       router.dismissAll();
       router.replace("/(auth)/login");
     } catch (e: any) {
@@ -202,8 +232,15 @@ export default function ResetPasswordScreen() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }}>
-        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
+      <KeyboardAvoidingView
+        behavior={Platform.select({ ios: "padding", android: undefined })}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={s.content}
+        >
           <Text style={s.title}>비밀번호를{"\n"}재설정할게요.</Text>
           <Text style={s.subtitle}>이메일 인증 후 새 비밀번호를 설정해주세요.</Text>
 
@@ -216,10 +253,9 @@ export default function ResetPasswordScreen() {
                 value={email}
                 onChangeText={(v) => {
                   setEmail(v);
-                  setRequested(false);
-                  setCode(null);
-                  setVerified(false);
-                  setCodeInput("");
+             
+                  resetLocalState();
+                  setEmail(v);
                 }}
                 placeholder="example@email.com"
                 keyboardType="email-address"
@@ -231,12 +267,15 @@ export default function ResetPasswordScreen() {
 
             <View style={s.gap} />
 
-            <Pressable style={[s.miniBtn, (!emailOk || submitting) && { opacity: 0.6 }]} onPress={onRequest} disabled={!emailOk || submitting}>
+            <Pressable
+              style={[s.miniBtn, (!emailOk || submitting) && { opacity: 0.6 }]}
+              onPress={onRequest}
+              disabled={!emailOk || submitting}
+            >
               <Text style={s.miniBtnText}>인증요청</Text>
             </Pressable>
           </View>
 
-          {/* ✅ 인증번호 표시(선택/복사 가능) */}
           {requested && code ? (
             <View style={s.codeBox}>
               <Text style={s.helper}>발급된 인증번호(목업) — 드래그로 복사 가능</Text>
@@ -263,7 +302,10 @@ export default function ResetPasswordScreen() {
                 </View>
                 <View style={s.gap} />
                 <Pressable
-                  style={[s.miniBtn, (codeInput.trim().length !== 6 || submitting) && { opacity: 0.6 }]}
+                  style={[
+                    s.miniBtn,
+                    (codeInput.trim().length !== 6 || submitting) && { opacity: 0.6 },
+                  ]}
                   onPress={onVerify}
                   disabled={codeInput.trim().length !== 6 || submitting}
                 >
@@ -300,8 +342,16 @@ export default function ResetPasswordScreen() {
                 inputStyle={s.tfInput}
               />
 
-              {!pwOk && pw.length > 0 ? <Text style={[s.helper, { color: c.status.danger }]}>비밀번호는 8자리 이상이어야 해요.</Text> : null}
-              {pw2.length > 0 && !pwMatch ? <Text style={[s.helper, { color: c.status.danger }]}>비밀번호가 일치하지 않아요.</Text> : null}
+              {!pwOk && pw.length > 0 ? (
+                <Text style={[s.helper, { color: c.status.danger }]}>
+                  비밀번호는 8자리 이상이어야 해요.
+                </Text>
+              ) : null}
+              {pw2.length > 0 && !pwMatch ? (
+                <Text style={[s.helper, { color: c.status.danger }]}>
+                  비밀번호가 일치하지 않아요.
+                </Text>
+              ) : null}
             </>
           ) : null}
         </ScrollView>
