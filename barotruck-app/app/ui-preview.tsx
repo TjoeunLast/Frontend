@@ -58,34 +58,7 @@ export default function UiPreviewScreen() {
           </View>
 
           <View style={{ gap: 16 }}>
-            <OrderCard
-              startAddr="경기 수원시 영통구 매탄동"
-              endAddr="부산 강서구 대저동"
-              distance="340km"
-              price="450,000원"
-              carInfo="11톤 윙바디 독차"
-              loadDate="오늘 14:00 상차"
-              createdAt="방금 전"
-              payMethod="선착불"
-              driveMode="왕복"
-              isInstant={true}
-              description="우천 시 작업 불가, 윙바디 필수입니다."
-              cargoInfo="파레트 14개 (5톤)"
-              loadMethod="지게차"
-            />
 
-            <OrderCard
-              startAddr="서울 마포구 공덕동"
-              endAddr="인천 서구 가좌동"
-              distance="28km"
-              price="120,000원"
-              carInfo="1톤 카고 혼적"
-              loadDate="내일 09:00 상차"
-              createdAt="10분 전"
-              payMethod="인수증 30일"
-              driveMode="편도"
-              isDirect={true}
-            />
           </View>
         </View>
 
