@@ -3,7 +3,7 @@ import { ImageInfo } from "./ImageInfo";
 // @/shared/models/order.
 
 /** 오더 상태 (Order.java의 status 필드 대응) */
-export type OrderStatus = 'REQUESTED' | 'ACCEPTED' | 'LOADING' | 'IN_TRANSIT' | 'UNLOADING' | 'COMPLETED' | 'CANCELLED';
+export type OrderStatus = 'REQUESTED' | 'ACCEPTED' | 'LOADING' | 'IN_TRANSIT' | 'UNLOADING' | 'COMPLETED' | 'CANCELLED' | 'PENDING';
 
 /** * 오더 생성 요청 (OrderRequest.java 대응)
  */
@@ -57,7 +57,7 @@ export interface OrderRequest {
   laborFee?: number;         // 수작업비 (기사님이 직접 상하차를 도울 경우 발생하는 수고비)
   packagingPrice?: number;   // 포장비용 (물건 보호를 위한 래핑, 파레트 제공 등 실비)
   insuranceFee?: number;     // 적재물 보험료 (고가 화물일 경우 추가되는 보험 비용)
-  
+
   distance: number;
   duration: number;
   // --- [시스템 계산 지표: 지도 API 연동 결과] ---
@@ -106,7 +106,6 @@ export interface OrderResponse {
 
     user?: UserSummary;
     cancellation?: CancellationSummary;
-
 }
 
 export interface UserSummary {

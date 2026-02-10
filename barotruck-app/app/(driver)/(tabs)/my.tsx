@@ -1,63 +1,78 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { Bell, MessageCircle } from 'lucide-react-native';
-
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import { ListFilter, Search, RotateCcw } from 'lucide-react-native';
 // 프로젝트 공통 컴포넌트 및 서비스 임포트
-// 경로 별칭(@) 설정 에러 방지를 위해 상대 경로 또는 정확한 alias 사용 확인 필요
-import { OrderCard } from '@/shared/ui/business'; //
-import { useAppTheme } from '@/shared/hooks/useAppTheme'; //
-import { OrderService } from '@/shared/api/orderService'; //
-import { OrderResponse } from '@/shared/models/order'; //
+import { OrderCard } from '@/shared/ui/business';
+import { useAppTheme } from '@/shared/hooks/useAppTheme';
+import { OrderService } from '@/shared/api/orderService';
+import { OrderResponse } from '@/shared/models/order';
 
-/**
- * 마이페이지 탭에서도 홈 화면과 동일한 추천 오더 목록을 보여줍니다.
- */
-export default function MyScreen() {
-  const t = useAppTheme(); //
-  const c = t.colors;      //
-  const [orders, setOrders] = useState<OrderResponse[]>([]); //
+export default function AvailableOrderListScreen() {
+  const { colors: c } = useAppTheme();
+  const [orders, setOrders] = useState<OrderResponse[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 배차 가능한 전체 오더 목록 가져오기
+  const fetchOrders = async () => {
+    try {
+      setRefreshing(true);
+      const data = await OrderService.getAvailableOrders();
+      setOrders(data);
+    } catch (e) {
+      console.error("오더 목록 로드 실패:", e);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    // 추천 오더 데이터를 API로부터 직접 호출하여 상태 업데이트
-    OrderService.getAvailableOrders()
-      .then(setOrders)
-      .catch(console.error);
+    fetchOrders();
   }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg.canvas }]}>
-      {/* 상단 헤더 영역 */}
+      {/* 상단 헤더 및 필터 영역 */}
       <View style={styles.header}>
-        <Text style={styles.logoText}>MY BARO</Text>
-        <View style={styles.headerIcons}>
-          <MessageCircle size={24} color={c.text.primary} />
-          <Bell size={24} color={c.text.primary} />
+        <View>
+          <Text style={[styles.headerTitle, { color: c.text.primary }]}>오더 찾기</Text>
+          <Text style={[styles.headerSub, { color: c.text.secondary }]}>현재 배차 가능한 오더 {orders.length}건</Text>
         </View>
+        <TouchableOpacity style={[styles.filterBtn, { borderColor: c.border.default }]}>
+          <ListFilter size={20} color={c.text.primary} />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* 마이페이지 섹션 강조 UI */}
-        <View style={[styles.infoCard, { backgroundColor: c.brand.primary }]}>
-          <Text style={styles.infoTitle}>내 활동 요약</Text>
-          <Text style={styles.infoAmount}>운행 준비 완료!</Text>
-        </View>
 
-        {/* 홈 화면과 동일한 추천 오더 리스트 렌더링 */}
-        <View style={styles.orderList}>
-          {orders.map((order) => (
-            <OrderCard
-              key={order.orderId}
-              startAddr={order.startAddr}
-              endAddr={order.endAddr}
-              distance={`${(order.distance / 1000).toFixed(1)}km`}
-              price={`${order.basePrice.toLocaleString()}원`}
-              carInfo={`${order.reqTonnage} ${order.reqCarType}`}
-              loadDate={order.startSchedule}
-              payMethod={order.payMethod} //
-              createdAt={order.createdAt}  //
-            />
-          ))}
+
+      {/* 오더 리스트 영역 */}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={fetchOrders} tintColor={c.brand.primary} />
+        }
+      >
+        {orders.length > 0 ? (
+          <View style={styles.orderList}>
+            {orders.map((order) => (
+              <OrderCard
+                key={order.orderId}
+                {...order}
+              />
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyContainer}>
+          {/* quaternary 대신 secondary 사용 */}
+          <RotateCcw size={48} color={c.text.secondary} /> 
+          <Text style={[styles.emptyText, { color: c.text.secondary }]}>
+            현재 주변에 올라온 오더가 없습니다.
+          </Text>
+          <TouchableOpacity onPress={fetchOrders} style={styles.retryBtn}>
+            <Text style={{ color: c.brand.primary, fontWeight: '700' }}>새로고침</Text>
+          </TouchableOpacity>
         </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -68,37 +83,38 @@ const styles = StyleSheet.create({
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
-    padding: 20, 
-    paddingTop: 60 
+    alignItems: 'center',
+    paddingHorizontal: 20, 
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#FFF'
   },
-  logoText: { 
-    fontSize: 22, 
-    fontWeight: '900', 
-    color: '#5D5FEF' 
-  },
-  headerIcons: { 
-    flexDirection: 'row', 
-    gap: 15 
+  headerTitle: { fontSize: 22, fontWeight: '900' },
+  headerSub: { fontSize: 13, marginTop: 2 },
+  filterBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   scrollContent: { 
-    padding: 20 
+    padding: 20,
+    paddingBottom: 40
   },
-  infoCard: { 
-    padding: 24, 
-    borderRadius: 20, 
-    marginBottom: 20 
+  orderList: { gap: 16 },
+  emptyContainer: {
+    marginTop: 100,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  infoTitle: { 
-    color: '#FFF', 
-    opacity: 0.8 
+  emptyText: {
+    marginTop: 16,
+    fontSize: 15,
   },
-  infoAmount: { 
-    color: '#FFF', 
-    fontSize: 24, 
-    fontWeight: '800', 
-    marginTop: 8 
-  },
-  orderList: { 
-    gap: 16 
+  retryBtn: {
+    marginTop: 12,
+    padding: 10
   }
 });
