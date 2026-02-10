@@ -7,6 +7,13 @@ export const AuthService = {
    */
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const res = await apiClient.post('/api/v1/auth/register', data);
+
+    // ✅ [수정] 회원가입 응답으로 받은 토큰을 여기서 바로 저장해야 합니다!
+    if (res.data.access_token) {
+      await SecureStore.setItemAsync('userToken', res.data.access_token);
+      await SecureStore.setItemAsync('refreshToken', res.data.refresh_token);
+    }
+
     return res.data;
   },
 
