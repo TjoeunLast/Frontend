@@ -15,6 +15,7 @@ export interface RegisterRequest {
     tonnage: number;
     bankName: string;
     accountNum: string;
+    career: number; // 또는 경력 형식에 따라 string 추가
   };
   // 화주 추가 정보
   shipper?: {

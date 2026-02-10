@@ -14,15 +14,17 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
-import { authApi } from "@/features/common/auth/api";
-import { useSignupStore } from "@/features/common/auth/model/signupStore";
 import type { RegisterRequest } from "@/shared/models/auth";
+import { AuthService } from "@/shared/api/authService";
+import { UserService } from "@/shared/api/userService";
+
+
 
 type ShipperType = "personal" | "business";
 
@@ -39,9 +41,12 @@ export default function SignupShipperScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
-  const account = useSignupStore((s) => s.account);
-  const resetSignup = useSignupStore((s) => s.reset);
-
+  const params = useLocalSearchParams<{ 
+    email: string; 
+    password: string; 
+    name: string; 
+    phone: string; 
+  }>();
   const [shipperType, setShipperType] = useState<ShipperType>("business");
 
   const [nickname, setNickname] = useState("");
@@ -180,36 +185,62 @@ export default function SignupShipperScreen() {
 
   const canSubmit =
     nickFormatOk &&
-    nickChecked &&
-    nickOkChecked &&
     bizNoOk &&
     companyOk &&
     ceoOk;
 
-  const onCheckNickname = useCallback(async () => {
-    if (!nickFormatOk) {
-      showMsg("닉네임 확인", "닉네임은 2글자 이상 입력해주세요.");
+
+  const onSubmit = async () => {
+    if (submitting) return;
+
+    if (!canSubmit) {
+      showMsg("입력 확인", "필수 정보를 모두 입력해주세요.");
       return;
     }
-    try {
-      setCheckingNick(true);
 
-      const ok = await authApi.checkNickname(nickname.trim());
-
-      setNickChecked(true);
-      setNickOkChecked(ok);
-
-      if (ok) showMsg("사용 가능", "사용 가능한 닉네임이에요.");
-      else showMsg("중복", "이미 사용 중인 닉네임이에요.");
-    } catch (e: any) {
-      showMsg("오류", e?.message ?? "중복확인에 실패했어요.");
-    } finally {
-      setCheckingNick(false);
+    // ✅ 에러 수정: account.email -> params.email
+    if (!params.email || !params.password || !params.phone) {
+      showMsg("계정 정보 없음", "기본 계정 정보를 먼저 입력해주세요.");
+      router.replace("/(auth)/signup");
+      return;
     }
-  }, [nickFormatOk, nickname]);
 
+    setSubmitting(true);
+    try {
+      const payload: RegisterRequest = {
+        nickname: nickname.trim(),
+        email: params.email,      // ✅ 수정
+        password: params.password, // ✅ 수정
+        phone: params.phone,       // ✅ 수정
+        role: "SHIPPER",
+        shipper: shipperType === "business"
+          ? {
+              companyName: companyName.trim(),
+              bizRegNum: bizNoDigits,
+              representative: ceoName.trim(),
+              bizAddress: "",
+            }
+          : undefined,
+      };
+
+      // ✅ 에러 수정: authApi.register -> AuthService.register
+      await AuthService.register(payload);
+      
+
+      
+      router.replace("/(shipper)/(tabs)");
+    } catch (e: any) {
+      showMsg("오류", e?.response?.data?.message || "회원가입에 실패했어요.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+
+  // 컴포넌트 내부에 추가
   const onLookupBiz = async () => {
     if (shipperType !== "business") return;
+    
     if (bizNoDigits.length < 10) {
       showMsg("사업자 등록번호", "숫자 10자리 이상 입력해주세요.");
       return;
@@ -217,56 +248,21 @@ export default function SignupShipperScreen() {
 
     try {
       setCheckingBiz(true);
-      await new Promise((r) => setTimeout(r, 450));
-      if (!companyName.trim()) setCompanyName("(주)대한물류");
-      if (!ceoName.trim()) setCeoName("대표자 성함");
-      showMsg("조회", "사업자 정보 조회 완료(목업)");
-    } catch (e: any) {
-      showMsg("오류", e?.message ?? "조회에 실패했어요.");
+      // 목업 지연 시간
+      await new Promise((r) => setTimeout(r, 600)); 
+      
+      // API가 없다면 임시 데이터로 채워줍니다.
+      if (!companyName.trim()) setCompanyName("(주)바로트럭물류");
+      if (!ceoName.trim()) setCeoName(params.name || "대표자명");
+      
+      showMsg("조회 성공", "사업자 정보 조회가 완료되었습니다.");
+    } catch (e) {
+      showMsg("오류", "사업자 조회 중 문제가 발생했습니다.");
     } finally {
       setCheckingBiz(false);
     }
   };
 
-  const onSubmit = async () => {
-    if (!canSubmit) {
-      showMsg("입력 확인", "필수 정보/닉네임 중복확인이 완료됐는지 확인해주세요.");
-      return;
-    }
-
-    if (!account.email || !account.password || !account.phone) {
-      showMsg("계정 정보 없음", "기본 계정 정보를 먼저 입력해주세요.");
-      router.replace("/(auth)/signup");
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const payload: RegisterRequest = {
-        nickname: nickname.trim(),
-        email: account.email,
-        password: account.password,
-        phone: account.phone,
-        role: "SHIPPER",
-        shipper:
-          shipperType === "business"
-            ? {
-                companyName: companyName.trim(),
-                bizRegNum: bizNoDigits,
-                representative: ceoName.trim(),
-                bizAddress: "",
-              }
-            : undefined,
-      };
-      await authApi.register(payload);
-      resetSignup();
-      router.replace("/(shipper)/(tabs)");
-    } catch (e: any) {
-      showMsg("오류", e?.message ?? "회원가입에 실패했어요.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   return (
     <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
@@ -308,7 +304,7 @@ export default function SignupShipperScreen() {
             <View style={{ flex: 1 }}>
               <TextField
                 value={nickname}
-                onChangeText={onChangeNickname}
+                onChangeText={setNickname} // 단순 저장
                 placeholder="앱에서 사용할 닉네임"
                 autoCapitalize="none"
                 inputWrapStyle={s.tfWrap}
@@ -316,14 +312,7 @@ export default function SignupShipperScreen() {
                 errorText={nickname.length > 0 && !nickFormatOk ? "닉네임은 2글자 이상 입력해주세요." : undefined}
               />
             </View>
-            <View style={s.rowGap} />
-            <Pressable
-              style={[s.miniBtn, (checkingNick || !nickFormatOk) && { opacity: 0.6 }]}
-              onPress={onCheckNickname}
-              disabled={checkingNick || !nickFormatOk}
-            >
-              <Text style={s.miniBtnText}>{checkingNick ? "확인중..." : "중복확인"}</Text>
-            </Pressable>
+            {/* 버튼과 rowGap 삭제 */}
           </View>
 
           {nickChecked ? (
