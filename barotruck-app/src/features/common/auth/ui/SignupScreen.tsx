@@ -19,9 +19,10 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
-import { authApi } from "@/features/common/auth/api";
+import { AuthService } from "@/shared/api/authService";
+import { UserService } from "@/shared/api/userService";
 
-import { useSignupStore, type SignupState } from "@/features/common/auth/model/signupStore";
+
 
 type Role = "shipper" | "driver";
 type Step = "role" | "account";
@@ -52,8 +53,6 @@ export default function SignupScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
-  const setRoleStore = useSignupStore((s: SignupState) => s.setRole);
-  const setAccount = useSignupStore((s: SignupState) => s.setAccount);
 
   const [step, setStep] = useState<Step>("role");
   const [role, setRole] = useState<Role | null>(null);
@@ -210,32 +209,12 @@ export default function SignupScreen() {
   const canNext =
     !!role &&
     emailFormatOk &&
-    emailChecked &&
-    emailOkChecked &&
     pwOk &&
     pwMatch &&
     nameOk &&
     phoneFormatOk &&
     phoneVerified;
 
-  const onCheckEmail = async () => {
-    if (!emailFormatOk) {
-      showMsg("이메일 확인", "이메일 형식을 확인해주세요.");
-      return;
-    }
-    try {
-      setCheckingEmail(true);
-      const ok = await authApi.checkEmail(normalizeEmail(email));
-      setEmailChecked(true);
-      setEmailOkChecked(ok);
-      if (ok) showMsg("사용 가능", "사용 가능한 이메일이에요.");
-      else showMsg("중복", "이미 가입된 이메일이에요.");
-    } catch (e: any) {
-      showMsg("오류", e?.message ?? "중복확인에 실패했어요.");
-    } finally {
-      setCheckingEmail(false);
-    }
-  };
 
   const onRequestOtp = () => {
     if (!phoneFormatOk) {
@@ -260,6 +239,14 @@ export default function SignupScreen() {
     showMsg("인증 실패", "인증번호가 올바르지 않아요.");
   };
 
+
+
+
+  /**
+   * 2. 다음 단계로 (onNext)
+   * 스토어를 사용하지 않으므로, expo-router의 push 기능을 이용해 
+   * 입력된 데이터를 다음 화면으로 전달합니다.
+   */
   const onNext = () => {
     if (!role) return;
     if (!canNext) {
@@ -267,17 +254,27 @@ export default function SignupScreen() {
       return;
     }
 
-    setRoleStore(role);
-    setAccount({
+    const signupData = {
       email: normalizeEmail(email),
       password: pw,
       name: name.trim(),
       phone: phone.trim(),
-    });
+      role: role,
+    };
 
-    // ✅ 공통 가입 완료 → 역할별 추가정보 화면
-    if (role === "shipper") router.replace("/(auth)/signup-shipper");
-    else router.replace("/(auth)/signup-driver");
+    // 데이터를 query params로 넘기거나, 다음 페이지에서 다시 입력받지 않도록 
+    // 경로를 이동합니다. (상태 관리가 없으므로 router.push에 객체 전달)
+    if (role === "shipper") {
+      router.push({
+        pathname: "/(auth)/signup-shipper",
+        params: signupData,
+      });
+    } else {
+      router.push({
+        pathname: "/(auth)/signup-driver",
+        params: signupData,
+      });
+    }
   };
 
   return (
@@ -347,17 +344,10 @@ export default function SignupScreen() {
                   errorText={email.length > 0 && !emailFormatOk ? "이메일 형식을 확인해주세요." : undefined}
                 />
               </View>
-              <View style={s.rowGap} />
-              <Pressable style={[s.miniBtn, checkingEmail && { opacity: 0.6 }]} onPress={onCheckEmail} disabled={checkingEmail}>
-                <Text style={s.miniBtnText}>{checkingEmail ? "확인중..." : "중복확인"}</Text>
-              </Pressable>
+              {/* 버튼과 rowGap을 삭제했습니다. */}
             </View>
 
-            {emailChecked ? (
-              <Text style={[s.helper, { color: emailOkChecked ? c.status.success : c.status.danger }]}>
-                {emailOkChecked ? "사용 가능한 이메일이에요." : "이미 가입된 이메일이에요."}
-              </Text>
-            ) : null}
+            {/* 이메일 체크 결과 메시지(emailChecked ?) 부분을 삭제했습니다. */}
 
             <View style={{ height: 16 }} />
 
