@@ -18,10 +18,9 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
-import { authApi } from "@/features/common/auth/api";
+import { AuthService } from "@/shared/api/authService";
 import { UserService } from "@/shared/api/userService";
 import type { RegisterRequest } from "@/shared/models/auth";
-import { useAuthStore } from "@/features/common/auth/model/authStore";
 
 const ROUTES = {
   signup: "/(auth)/signup" as const,
@@ -39,7 +38,6 @@ export default function LoginScreen() {
   const router = useRouter();
   const t = useAppTheme();
   const c = t.colors;
-  const isMock = process.env.EXPO_PUBLIC_USE_MOCK_AUTH === "true";
 
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -59,11 +57,6 @@ export default function LoginScreen() {
   };
 
   const resolveRole = async () => {
-    if (isMock) {
-      const user = useAuthStore.getState().user;
-      if (!user) throw new Error("로그인 정보를 찾을 수 없어요.");
-      return user.role;
-    }
     const me = await UserService.getMyInfo();
     const role = me.role === "DRIVER" ? "DRIVER" : me.role === "SHIPPER" ? "SHIPPER" : null;
     if (!role) throw new Error("권한 정보를 확인할 수 없어요.");
@@ -74,7 +67,7 @@ export default function LoginScreen() {
     if (!canLogin) return;
     try {
       setSubmitting(true);
-      await authApi.login(email.trim(), pw);
+      await AuthService.login(email.trim(), pw);
       const role = await resolveRole();
       goByRole(role);
     } catch (e: any) {
@@ -100,14 +93,13 @@ export default function LoginScreen() {
 
       // 1) 일단 signIn 시도
       try {
-        await authApi.login(u.email, u.password);
+        await AuthService.login(u.email, u.password);
         const role = await resolveRole();
         goByRole(role);
         return;
       } catch {
-        // 2) 없으면 signUp으로 계정 생성 후 signIn
-        await authApi.register(payload);
-        await authApi.login(u.email, u.password);
+        await AuthService.register(payload);
+        await AuthService.login(u.email, u.password);
         const role = await resolveRole();
         goByRole(role);
       }

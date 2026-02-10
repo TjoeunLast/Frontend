@@ -21,7 +21,7 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
-import { authApi } from "@/features/common/auth/api";
+import { AuthService } from "@/shared/api/authService";
 import { useSignupStore } from "@/features/common/auth/model/signupStore";
 import type { RegisterRequest } from "@/shared/models/auth";
 
@@ -310,8 +310,6 @@ export default function SignupDriverScreen() {
 
   const canSubmit =
     nickFormatOk &&
-    nickChecked &&
-    nickOkChecked &&
     plateOk &&
     !!carType &&
     !!ton &&
@@ -324,14 +322,9 @@ export default function SignupDriverScreen() {
     }
     try {
       setCheckingNick(true);
-
-      const ok = await authApi.checkNickname(nickname.trim());
-
       setNickChecked(true);
-      setNickOkChecked(ok);
-
-      if (ok) showMsg("사용 가능", "사용 가능한 닉네임이에요.");
-      else showMsg("중복", "이미 사용 중인 닉네임이에요.");
+      setNickOkChecked(true);
+      showMsg("확인 완료", "닉네임 중복확인은 회원가입 시 처리됩니다.");
     } catch (e: any) {
       showMsg("오류", e?.message ?? "중복확인에 실패했어요.");
     } finally {
@@ -379,7 +372,7 @@ export default function SignupDriverScreen() {
               }
             : undefined,
       };
-      await authApi.register(payload);
+      await AuthService.register(payload);
       resetSignup();
       router.replace("/(driver)/(tabs)");
     } catch (e: any) {
@@ -427,7 +420,7 @@ export default function SignupDriverScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={s.form}
         >
-          {/* 닉네임 + 중복확인 */}
+          {/* 닉네임 */}
           <Text style={s.label}>닉네임</Text>
           <View style={s.row}>
             <View style={{ flex: 1 }}>
@@ -451,11 +444,7 @@ export default function SignupDriverScreen() {
             </Pressable>
           </View>
 
-          {nickChecked ? (
-            <Text style={[s.helper, { color: nickOkChecked ? c.status.success : c.status.danger }]}>
-              {nickOkChecked ? "사용 가능한 닉네임이에요." : "이미 사용 중인 닉네임이에요."}
-            </Text>
-          ) : null}
+          {nickChecked ? <Text style={s.helper}>닉네임 중복확인은 회원가입 시 처리됩니다.</Text> : null}
 
           <View style={{ height: 16 }} />
 

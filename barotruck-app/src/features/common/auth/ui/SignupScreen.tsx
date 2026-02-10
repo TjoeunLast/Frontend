@@ -19,7 +19,6 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
-import { authApi } from "@/features/common/auth/api";
 
 import { useSignupStore, type SignupState } from "@/features/common/auth/model/signupStore";
 
@@ -210,8 +209,6 @@ export default function SignupScreen() {
   const canNext =
     !!role &&
     emailFormatOk &&
-    emailChecked &&
-    emailOkChecked &&
     pwOk &&
     pwMatch &&
     nameOk &&
@@ -225,11 +222,10 @@ export default function SignupScreen() {
     }
     try {
       setCheckingEmail(true);
-      const ok = await authApi.checkEmail(normalizeEmail(email));
+      // 백엔드에 이메일 중복확인 API가 없어서 임시로 확인 스킵
       setEmailChecked(true);
-      setEmailOkChecked(ok);
-      if (ok) showMsg("사용 가능", "사용 가능한 이메일이에요.");
-      else showMsg("중복", "이미 가입된 이메일이에요.");
+      setEmailOkChecked(true);
+      showMsg("확인 완료", "이메일 중복확인은 회원가입 시 처리됩니다.");
     } catch (e: any) {
       showMsg("오류", e?.message ?? "중복확인에 실패했어요.");
     } finally {
