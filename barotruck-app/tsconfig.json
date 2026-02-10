@@ -12,5 +12,8 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "src/features/common/auth/api/authTypes"  ]
+  ]
+  
 }
+
+

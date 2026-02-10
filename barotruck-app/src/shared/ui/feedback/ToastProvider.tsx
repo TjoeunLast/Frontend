@@ -33,36 +33,47 @@ export function useToast() {
 export function ToastProvider({ children }: PropsWithChildren) {
   const t = useAppTheme();
   const c = t.colors;
-
   const [toast, setToast] = useState<Toast | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<any>(null);
 
   const hide = useCallback(() => {
-    Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true }).start(() => {
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
       setToast(null);
     });
   }, [opacity]);
 
   const show = useCallback(
     (message: string, tone: ToastTone = "neutral") => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
 
-      setToast({ id: String(Date.now()), message, tone });
-      Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+      const id = String(Date.now());
+      setToast({ id, message, tone });
+
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
 
       timerRef.current = setTimeout(() => {
         hide();
         timerRef.current = null;
-      }, 2300);
+      }, 2500);
     },
-    [hide, opacity]
+    [hide, opacity],
   );
 
   const api = useMemo(() => ({ show }), [show]);
 
   const toneStyle = useMemo(() => {
-    if (!toast) return { bg: "rgba(30, 30, 30, 0.95)", fg: "#FFFFFF" };
+    if (!toast) return { bg: "#333333", fg: "#FFFFFF" };
     switch (toast.tone) {
       case "success":
         return { bg: c.status.success, fg: c.text.inverse };
@@ -80,12 +91,12 @@ export function ToastProvider({ children }: PropsWithChildren) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-
       {toast ? (
-        // ✅ 절대 클릭/터치 가로채지 않게: style.pointerEvents = "none"
-        <View style={[s.portal, { pointerEvents: "none" }]}>
-          <Animated.View style={[s.toast, { backgroundColor: toneStyle.bg, opacity }]}>
-            <Text style={[s.text, { color: toneStyle.fg }]} numberOfLines={2}>
+        <View pointerEvents="box-none" style={s.portal}>
+          <Animated.View
+            style={[s.toast, { backgroundColor: toneStyle.bg, opacity }]}
+          >
+            <Text style={[s.text, { color: toneStyle.fg }]}>
               {toast.message}
             </Text>
           </Animated.View>
@@ -106,10 +117,10 @@ const s = StyleSheet.create({
     zIndex: 9999,
   },
   toast: {
-    maxWidth: 420,
+    maxWidth: 400,
     width: "100%",
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -118,5 +129,10 @@ const s = StyleSheet.create({
     elevation: 4,
     alignItems: "center",
   },
-  text: { fontSize: 14, fontWeight: "700", textAlign: "center", lineHeight: 20 },
+  text: {
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    lineHeight: 20,
+  },
 });

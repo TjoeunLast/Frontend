@@ -6,3 +6,5 @@ export function formatDistanceKm(km?: number): string {
   if (typeof km !== "number" || Number.isNaN(km)) return "";
   return `${Math.round(km)}km`;
 }
+
+

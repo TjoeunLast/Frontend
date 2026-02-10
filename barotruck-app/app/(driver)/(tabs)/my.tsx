@@ -1,126 +1,104 @@
-import React, { useMemo, useState } from "react";
-import {
-  Alert,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-  type TextStyle,
-  type ViewStyle,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { Bell, MessageCircle } from 'lucide-react-native';
 
-import { useAppTheme } from "@/shared/hooks/useAppTheme";
-import { Button } from "@/shared/ui/base/Button";
-import { withAlpha } from "@/shared/utils/color";
-import { useAuthStore } from "@/features/common/auth/model/authStore";
+// 프로젝트 공통 컴포넌트 및 서비스 임포트
+// 경로 별칭(@) 설정 에러 방지를 위해 상대 경로 또는 정확한 alias 사용 확인 필요
+import { OrderCard } from '@/shared/ui/business'; //
+import { useAppTheme } from '@/shared/hooks/useAppTheme'; //
+import { OrderService } from '@/shared/api/orderService'; //
+import { OrderResponse } from '@/shared/models/order'; //
 
-export default function DriverMoreScreen() {
-  const router = useRouter();
-  const t = useAppTheme();
-  const c = t.colors;
+/**
+ * 마이페이지 탭에서도 홈 화면과 동일한 추천 오더 목록을 보여줍니다.
+ */
+export default function MyScreen() {
+  const t = useAppTheme(); //
+  const c = t.colors;      //
+  const [orders, setOrders] = useState<OrderResponse[]>([]); //
 
-  const user = useAuthStore((s) => s.user);
-  const signOut = useAuthStore((s) => s.signOut);
-
-  const [loading, setLoading] = useState(false);
-
-  const s = useMemo(() => {
-    return StyleSheet.create({
-      screen: { flex: 1, backgroundColor: c.bg.surface } as ViewStyle,
-      pad: { padding: 20 } as ViewStyle,
-
-      title: { fontSize: 24, fontWeight: "900", color: c.text.primary } as TextStyle,
-      sub: { marginTop: 8, fontSize: 14, fontWeight: "700", color: c.text.secondary } as TextStyle,
-
-      card: {
-        marginTop: 18,
-        padding: 16,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: c.border.default,
-        backgroundColor: c.bg.surface,
-      } as ViewStyle,
-
-      row: {
-        paddingVertical: 12,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-      } as ViewStyle,
-      rowLabel: { fontSize: 14, fontWeight: "900", color: c.text.secondary } as TextStyle,
-      rowValue: { fontSize: 15, fontWeight: "900", color: c.text.primary } as TextStyle,
-
-      divider: { height: 1, backgroundColor: withAlpha(c.border.default, 0.9), marginVertical: 12 } as ViewStyle,
-
-      logoutBtn: {
-        height: 56,
-        borderRadius: 16,
-        marginTop: 14,
-        backgroundColor: c.status.dangerSoft,
-        borderWidth: 1,
-        borderColor: withAlpha(c.status.danger, 0.55),
-      } as ViewStyle,
-      logoutText: { fontSize: 16, fontWeight: "900", color: c.status.danger } as TextStyle,
-    });
-  }, [c]);
-
-  const doLogout = async () => {
-    try {
-      setLoading(true);
-      await signOut();
-      router.dismissAll();
-      router.replace("/(auth)/login");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onLogout = () => {
-    if (Platform.OS === "web") {
-      const ok = window.confirm("정말 로그아웃할까요?");
-      if (!ok) return;
-      void doLogout();
-      return;
-    }
-
-    Alert.alert("로그아웃", "정말 로그아웃할까요?", [
-      { text: "취소", style: "cancel" },
-      { text: "로그아웃", style: "destructive", onPress: () => void doLogout() },
-    ]);
-  };
+  useEffect(() => {
+    // 추천 오더 데이터를 API로부터 직접 호출하여 상태 업데이트
+    OrderService.getAvailableOrders()
+      .then(setOrders)
+      .catch(console.error);
+  }, []);
 
   return (
-    <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
-      <View style={s.pad}>
-        <Text style={s.title}>더보기</Text>
-        <Text style={s.sub}>내 정보/설정(목업)</Text>
-
-        <View style={s.card}>
-          <View style={s.row}>
-            <Text style={s.rowLabel}>이름</Text>
-            <Text style={s.rowValue}>{user?.name ?? "-"}</Text>
-          </View>
-          <View style={s.row}>
-            <Text style={s.rowLabel}>이메일</Text>
-            <Text style={s.rowValue}>{user?.email ?? "-"}</Text>
-          </View>
-
-          <View style={s.divider} />
-
-          <Button
-            title="로그아웃"
-            variant="outline"
-            size="lg"
-            fullWidth
-            loading={loading}
-            onPress={onLogout}
-            containerStyle={s.logoutBtn}
-            textStyle={s.logoutText}
-          />
+    <View style={[styles.container, { backgroundColor: c.bg.canvas }]}>
+      {/* 상단 헤더 영역 */}
+      <View style={styles.header}>
+        <Text style={styles.logoText}>MY BARO</Text>
+        <View style={styles.headerIcons}>
+          <MessageCircle size={24} color={c.text.primary} />
+          <Bell size={24} color={c.text.primary} />
         </View>
       </View>
-    </SafeAreaView>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* 마이페이지 섹션 강조 UI */}
+        <View style={[styles.infoCard, { backgroundColor: c.brand.primary }]}>
+          <Text style={styles.infoTitle}>내 활동 요약</Text>
+          <Text style={styles.infoAmount}>운행 준비 완료!</Text>
+        </View>
+
+        {/* 홈 화면과 동일한 추천 오더 리스트 렌더링 */}
+        <View style={styles.orderList}>
+          {orders.map((order) => (
+            <OrderCard
+              key={order.orderId}
+              startAddr={order.startAddr}
+              endAddr={order.endAddr}
+              distance={`${(order.distance / 1000).toFixed(1)}km`}
+              price={`${order.basePrice.toLocaleString()}원`}
+              carInfo={`${order.reqTonnage} ${order.reqCarType}`}
+              loadDate={order.startSchedule}
+              payMethod={order.payMethod} //
+              createdAt={order.createdAt}  //
+            />
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    padding: 20, 
+    paddingTop: 60 
+  },
+  logoText: { 
+    fontSize: 22, 
+    fontWeight: '900', 
+    color: '#5D5FEF' 
+  },
+  headerIcons: { 
+    flexDirection: 'row', 
+    gap: 15 
+  },
+  scrollContent: { 
+    padding: 20 
+  },
+  infoCard: { 
+    padding: 24, 
+    borderRadius: 20, 
+    marginBottom: 20 
+  },
+  infoTitle: { 
+    color: '#FFF', 
+    opacity: 0.8 
+  },
+  infoAmount: { 
+    color: '#FFF', 
+    fontSize: 24, 
+    fontWeight: '800', 
+    marginTop: 8 
+  },
+  orderList: { 
+    gap: 16 
+  }
+});
