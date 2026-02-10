@@ -18,7 +18,9 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
-
+import { authApi } from "@/features/common/auth/api";
+import { UserService } from "@/shared/api/userService";
+import type { RegisterRequest } from "@/shared/models/auth";
 import { useAuthStore } from "@/features/common/auth/model/authStore";
 
 const ROUTES = {
@@ -37,9 +39,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const t = useAppTheme();
   const c = t.colors;
-
-  const signIn = useAuthStore((s) => s.signIn);
-  const signUp = useAuthStore((s) => s.signUp);
+  const isMock = process.env.EXPO_PUBLIC_USE_MOCK_AUTH === "true";
 
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -58,12 +58,25 @@ export default function LoginScreen() {
     router.replace(role === "DRIVER" ? ROUTES.driverTabs : ROUTES.shipperTabs);
   };
 
+  const resolveRole = async () => {
+    if (isMock) {
+      const user = useAuthStore.getState().user;
+      if (!user) throw new Error("로그인 정보를 찾을 수 없어요.");
+      return user.role;
+    }
+    const me = await UserService.getMyInfo();
+    const role = me.role === "DRIVER" ? "DRIVER" : me.role === "SHIPPER" ? "SHIPPER" : null;
+    if (!role) throw new Error("권한 정보를 확인할 수 없어요.");
+    return role;
+  };
+
   const onLogin = async () => {
     if (!canLogin) return;
     try {
       setSubmitting(true);
-      const user = await signIn({ email: email.trim(), password: pw, remember: autoLogin });
-      goByRole(user.role);
+      await authApi.login(email.trim(), pw);
+      const role = await resolveRole();
+      goByRole(role);
     } catch (e: any) {
       showError(e?.message ?? "로그인에 실패했어요.");
     } finally {
@@ -77,23 +90,26 @@ export default function LoginScreen() {
       setSubmitting(true);
 
       const u = kind === "shipper" ? MOCK.shipper : MOCK.driver;
+      const payload: RegisterRequest = {
+        nickname: u.name,
+        email: u.email,
+        password: u.password,
+        phone: "01000000000",
+        role: u.role,
+      };
 
       // 1) 일단 signIn 시도
       try {
-        const user = await signIn({ email: u.email, password: u.password, remember: true });
-        goByRole(user.role);
+        await authApi.login(u.email, u.password);
+        const role = await resolveRole();
+        goByRole(role);
         return;
       } catch {
         // 2) 없으면 signUp으로 계정 생성 후 signIn
-        await signUp({
-          email: u.email,
-          password: u.password,
-          name: u.name,
-          role: u.role,
-          remember: true,
-        });
-        const user = await signIn({ email: u.email, password: u.password, remember: true });
-        goByRole(user.role);
+        await authApi.register(payload);
+        await authApi.login(u.email, u.password);
+        const role = await resolveRole();
+        goByRole(role);
       }
     } catch (e: any) {
       showError(e?.message ?? "목업 로그인에 실패했어요.");

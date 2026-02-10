@@ -21,6 +21,9 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
+import { authApi } from "@/features/common/auth/api";
+import { useSignupStore } from "@/features/common/auth/model/signupStore";
+import type { RegisterRequest } from "@/shared/models/auth";
 
 function showMsg(title: string, msg: string) {
   if (Platform.OS === "web") window.alert(`${title}\n\n${msg}`);
@@ -34,6 +37,46 @@ function digitsOnly(v: string) {
 }
 function normalizePlate(v: string) {
   return v.replace(/\s+/g, " ").trim();
+}
+function mapVehicleType(v: string | null) {
+  if (!v) return "cargo";
+  switch (v) {
+    case "CARGO":
+      return "cargo";
+    case "WING":
+      return "wing";
+    case "TOP":
+      return "top";
+    case "COLD":
+      return "refrigerated";
+    case "LIFT":
+      return "cargo";
+    default:
+      return "cargo";
+  }
+}
+function mapTon(v: string | null) {
+  if (!v) return "1t";
+  switch (v) {
+    case "1T":
+      return "1t";
+    case "1_4T":
+      return "1.4t";
+    case "2_5T":
+      return "2.5t";
+    case "3_5T":
+      return "3.5t";
+    case "5T":
+      return "5t";
+    case "8T":
+      return "5t";
+    case "11T":
+      return "11t";
+    case "25T":
+      return "25t";
+    default:
+      return "1t";
+  }
 }
 
 function SelectField({
@@ -167,6 +210,9 @@ export default function SignupDriverScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
+  const account = useSignupStore((s) => s.account);
+  const resetSignup = useSignupStore((s) => s.reset);
+
   // 닉네임
   const [nickname, setNickname] = useState("");
   const [nickChecked, setNickChecked] = useState(false);
@@ -178,6 +224,7 @@ export default function SignupDriverScreen() {
   const [carType, setCarType] = useState<string | null>(null);
   const [ton, setTon] = useState<string | null>(null);
   const [expYears, setExpYears] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const onChangeNickname = (v: string) => {
     setNickname(v);
@@ -278,10 +325,7 @@ export default function SignupDriverScreen() {
     try {
       setCheckingNick(true);
 
-      // ✅ 목업 중복확인 로직 (나중에 API로 교체)
-      await new Promise((r) => setTimeout(r, 350));
-      const bad = ["admin", "관리자", "test", "테스트"];
-      const ok = !bad.includes(nickname.trim().toLowerCase());
+      const ok = await authApi.checkNickname(nickname.trim());
 
       setNickChecked(true);
       setNickOkChecked(ok);
@@ -295,16 +339,54 @@ export default function SignupDriverScreen() {
     }
   }, [nickFormatOk, nickname]);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!canSubmit) {
       showMsg("입력 확인", "필수 입력/중복확인이 완료됐는지 확인해주세요.");
       return;
     }
 
-    // ✅ 여기서 서버에 차주 추가정보 저장 후 성공 시 홈 이동
-    // driverApi.completeSignup({ nickname, plateNo, carType, ton, expYears: Number(digitsOnly(expYears)) })
+    if (!account.email || !account.password || !account.phone) {
+      showMsg("계정 정보 없음", "기본 계정 정보를 먼저 입력해주세요.");
+      router.replace("/(auth)/signup");
+      return;
+    }
 
-    router.replace("/(driver)/(tabs)");
+    try {
+      setSubmitting(true);
+      const payload: RegisterRequest = {
+        nickname: nickname.trim(),
+        email: account.email,
+        password: account.password,
+        phone: account.phone,
+        role: "DRIVER",
+        driver:
+          carType && ton
+            ? {
+                carNum: normalizePlate(plateNo),
+                carType,
+                tonnage: (() => {
+                  const mapped = mapTon(ton);
+                  if (mapped === "1.4t") return 1.4;
+                  if (mapped === "2.5t") return 2.5;
+                  if (mapped === "3.5t") return 3.5;
+                  if (mapped === "5t") return 5;
+                  if (mapped === "11t") return 11;
+                  if (mapped === "25t") return 25;
+                  return 1;
+                })(),
+                bankName: "",
+                accountNum: "",
+              }
+            : undefined,
+      };
+      await authApi.register(payload);
+      resetSignup();
+      router.replace("/(driver)/(tabs)");
+    } catch (e: any) {
+      showMsg("오류", e?.message ?? "회원가입에 실패했어요.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const carTypeOptions: Option[] = [
@@ -436,7 +518,7 @@ export default function SignupDriverScreen() {
             variant="primary"
             size="lg"
             fullWidth
-            disabled={!canSubmit}
+            disabled={!canSubmit || submitting}
             onPress={onSubmit}
             style={s.submitBtn}
           />

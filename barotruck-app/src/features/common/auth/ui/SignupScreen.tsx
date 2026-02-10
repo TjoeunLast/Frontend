@@ -19,9 +19,9 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
+import { authApi } from "@/features/common/auth/api";
 
 import { useSignupStore, type SignupState } from "@/features/common/auth/model/signupStore";
-import { useAuthStore } from "@/features/common/auth/model/authStore";
 
 type Role = "shipper" | "driver";
 type Step = "role" | "account";
@@ -54,8 +54,6 @@ export default function SignupScreen() {
 
   const setRoleStore = useSignupStore((s: SignupState) => s.setRole);
   const setAccount = useSignupStore((s: SignupState) => s.setAccount);
-
-  const checkEmailAvailable = useAuthStore((s) => s.checkEmailAvailable);
 
   const [step, setStep] = useState<Step>("role");
   const [role, setRole] = useState<Role | null>(null);
@@ -227,7 +225,7 @@ export default function SignupScreen() {
     }
     try {
       setCheckingEmail(true);
-      const ok = await checkEmailAvailable(normalizeEmail(email));
+      const ok = await authApi.checkEmail(normalizeEmail(email));
       setEmailChecked(true);
       setEmailOkChecked(ok);
       if (ok) showMsg("사용 가능", "사용 가능한 이메일이에요.");

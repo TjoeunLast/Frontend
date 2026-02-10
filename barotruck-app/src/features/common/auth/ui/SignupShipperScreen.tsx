@@ -20,6 +20,9 @@ import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
+import { authApi } from "@/features/common/auth/api";
+import { useSignupStore } from "@/features/common/auth/model/signupStore";
+import type { RegisterRequest } from "@/shared/models/auth";
 
 type ShipperType = "personal" | "business";
 
@@ -36,9 +39,11 @@ export default function SignupShipperScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
+  const account = useSignupStore((s) => s.account);
+  const resetSignup = useSignupStore((s) => s.reset);
+
   const [shipperType, setShipperType] = useState<ShipperType>("business");
 
-  // ✅ 닉네임 + 중복확인 상태
   const [nickname, setNickname] = useState("");
   const [nickChecked, setNickChecked] = useState(false);
   const [nickOkChecked, setNickOkChecked] = useState(false);
@@ -49,8 +54,8 @@ export default function SignupShipperScreen() {
   const [ceoName, setCeoName] = useState("");
 
   const [checkingBiz, setCheckingBiz] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // 입력이 바뀌면 중복확인 상태 리셋
   const onChangeNickname = (v: string) => {
     setNickname(v);
     setNickChecked(false);
@@ -167,14 +172,12 @@ export default function SignupShipperScreen() {
 
   const bizNoDigits = digitsOnly(bizNo);
 
-  // ✅ 닉네임 포맷 규칙(원하면 수정)
   const nickFormatOk = nickname.trim().length >= 2;
 
   const bizNoOk = shipperType === "personal" ? true : bizNoDigits.length >= 10;
   const companyOk = shipperType === "personal" ? true : companyName.trim().length > 0;
   const ceoOk = shipperType === "personal" ? true : ceoName.trim().length > 0;
 
-  // ✅ 가입완료 조건: 닉네임 중복확인까지 포함
   const canSubmit =
     nickFormatOk &&
     nickChecked &&
@@ -191,10 +194,7 @@ export default function SignupShipperScreen() {
     try {
       setCheckingNick(true);
 
-      // ✅ 목업 중복확인 (나중에 API로 교체)
-      await new Promise((r) => setTimeout(r, 350));
-      const bad = ["admin", "관리자", "test", "테스트"];
-      const ok = !bad.includes(nickname.trim().toLowerCase());
+      const ok = await authApi.checkNickname(nickname.trim());
 
       setNickChecked(true);
       setNickOkChecked(ok);
@@ -228,13 +228,44 @@ export default function SignupShipperScreen() {
     }
   };
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!canSubmit) {
       showMsg("입력 확인", "필수 정보/닉네임 중복확인이 완료됐는지 확인해주세요.");
       return;
     }
-    // ✅ 여기서 서버에 화주 추가정보 저장 후 성공 시 홈 이동
-    router.replace("/(shipper)/(tabs)");
+
+    if (!account.email || !account.password || !account.phone) {
+      showMsg("계정 정보 없음", "기본 계정 정보를 먼저 입력해주세요.");
+      router.replace("/(auth)/signup");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const payload: RegisterRequest = {
+        nickname: nickname.trim(),
+        email: account.email,
+        password: account.password,
+        phone: account.phone,
+        role: "SHIPPER",
+        shipper:
+          shipperType === "business"
+            ? {
+                companyName: companyName.trim(),
+                bizRegNum: bizNoDigits,
+                representative: ceoName.trim(),
+                bizAddress: "",
+              }
+            : undefined,
+      };
+      await authApi.register(payload);
+      resetSignup();
+      router.replace("/(shipper)/(tabs)");
+    } catch (e: any) {
+      showMsg("오류", e?.message ?? "회원가입에 실패했어요.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -362,7 +393,7 @@ export default function SignupShipperScreen() {
             variant="primary"
             size="lg"
             fullWidth
-            disabled={!canSubmit}
+            disabled={!canSubmit || submitting}
             onPress={onSubmit}
             style={s.submitBtn}
           />
