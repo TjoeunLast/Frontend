@@ -93,7 +93,7 @@ export const OrderDetailModal = ({
 
             {/* 2. 거리 및 소요시간 배지 */}
             <View style={s.statsRow}>
-              <View style={s.statBadge}><Text style={s.statText}>🛣️ {(data.distance / 1000).toFixed(1)}km</Text></View>
+              <View style={s.statBadge}><Text style={s.statText}>🛣️ {(data.distance).toFixed(1)}km</Text></View>
               <View style={s.statBadge}><Text style={s.statText}>⏱️ {Math.floor(data.duration / 3600)}시간 {Math.floor((data.duration % 3600) / 60)}분</Text></View>
             </View>
 
