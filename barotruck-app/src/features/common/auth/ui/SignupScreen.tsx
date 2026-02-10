@@ -1,4 +1,3 @@
-// srv/festures/commen/auth/ui/SingupScrean.tsx
 import React, { useMemo, useState } from "react";
 import {
   Alert,
@@ -67,18 +66,15 @@ export default function SignupScreen() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
-  // ✅ 이메일 중복확인 상태
   const [emailChecked, setEmailChecked] = useState(false);
   const [emailOkChecked, setEmailOkChecked] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
 
-  // ✅ 전화 인증(목업) 상태
   const [otpRequested, setOtpRequested] = useState(false);
-  const [otpCode, setOtpCode] = useState<string | null>(null); // (개발용) 발급 코드 저장
+  const [otpCode, setOtpCode] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState("");
   const [phoneVerified, setPhoneVerified] = useState(false);
 
-  // 입력이 바뀌면 검증 상태 리셋 (핵심!)
   const onChangeEmail = (v: string) => {
     setEmail(v);
     setEmailChecked(false);
@@ -98,39 +94,14 @@ export default function SignupScreen() {
     return StyleSheet.create({
       screen: { flex: 1, backgroundColor: c.bg.surface } as ViewStyle,
 
-      header: {
-        paddingHorizontal: S.lg,
-        paddingTop: S.md,
-        paddingBottom: S.md,
-      } as ViewStyle,
-      backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: "center",
-        justifyContent: "center",
-      } as ViewStyle,
+      header: { paddingHorizontal: S.lg, paddingTop: S.md, paddingBottom: S.md } as ViewStyle,
+      backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" } as ViewStyle,
 
       titleWrap: { paddingHorizontal: S.lg, paddingTop: S.sm } as ViewStyle,
-      title: {
-        fontSize: 30,
-        fontWeight: "900",
-        letterSpacing: -0.4,
-        color: c.text.primary,
-        lineHeight: 38,
-      } as TextStyle,
-      subtitle: {
-        marginTop: 10,
-        fontSize: 16,
-        fontWeight: "700",
-        color: c.text.secondary,
-        lineHeight: 22,
-      } as TextStyle,
+      title: { fontSize: 30, fontWeight: "900", letterSpacing: -0.4, color: c.text.primary, lineHeight: 38 } as TextStyle,
+      subtitle: { marginTop: 10, fontSize: 16, fontWeight: "700", color: c.text.secondary, lineHeight: 22 } as TextStyle,
 
-      cardList: {
-        paddingHorizontal: S.lg,
-        paddingTop: S.xl,
-      } as ViewStyle,
+      cardList: { paddingHorizontal: S.lg, paddingTop: S.xl } as ViewStyle,
 
       roleCard: {
         backgroundColor: c.bg.surface,
@@ -142,7 +113,6 @@ export default function SignupScreen() {
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 14,
-
         shadowColor: withAlpha("#000000", 0.06),
         shadowOpacity: 1,
         shadowRadius: 10,
@@ -162,21 +132,11 @@ export default function SignupScreen() {
       } as ViewStyle,
       roleTextWrap: { flex: 1 } as ViewStyle,
       roleTitle: { fontSize: 18, fontWeight: "900", color: c.text.primary } as TextStyle,
-      roleDesc: {
-        marginTop: 6,
-        fontSize: 15,
-        fontWeight: "700",
-        color: c.text.secondary,
-      } as TextStyle,
+      roleDesc: { marginTop: 6, fontSize: 15, fontWeight: "700", color: c.text.secondary } as TextStyle,
 
       form: { paddingHorizontal: S.lg, paddingTop: S.xl, paddingBottom: 140 } as ViewStyle,
 
-      label: {
-        fontSize: 14,
-        fontWeight: "900",
-        color: c.text.secondary,
-        marginBottom: 8,
-      } as TextStyle,
+      label: { fontSize: 14, fontWeight: "900", color: c.text.secondary, marginBottom: 8 } as TextStyle,
 
       row: { flexDirection: "row", alignItems: "center" } as ViewStyle,
       rowGap: { width: 12 } as ViewStyle,
@@ -203,12 +163,7 @@ export default function SignupScreen() {
       } as ViewStyle,
       miniBtnText: { fontSize: 15, fontWeight: "900", color: c.text.primary } as TextStyle,
 
-      helper: {
-        marginTop: 8,
-        fontSize: 13,
-        fontWeight: "800",
-        color: c.text.secondary,
-      } as TextStyle,
+      helper: { marginTop: 8, fontSize: 13, fontWeight: "800", color: c.text.secondary } as TextStyle,
 
       bottomBar: {
         position: "absolute",
@@ -250,19 +205,16 @@ export default function SignupScreen() {
 
   const emailFormatOk = isEmailLike(email);
   const pwOk = pw.length >= 8;
-  const pw2Ok = pw2.length >= 8;
   const pwMatch = pw.length > 0 && pw2.length > 0 && pw === pw2;
   const nameOk = name.trim().length > 0;
   const phoneFormatOk = isPhoneLike(phone);
 
-  // ✅ 다음 버튼 조건: 이메일 중복확인 통과 + 전화인증 완료 포함
   const canNext =
     !!role &&
     emailFormatOk &&
     emailChecked &&
     emailOkChecked &&
     pwOk &&
-    pw2Ok &&
     pwMatch &&
     nameOk &&
     phoneFormatOk &&
@@ -278,7 +230,6 @@ export default function SignupScreen() {
       const ok = await checkEmailAvailable(normalizeEmail(email));
       setEmailChecked(true);
       setEmailOkChecked(ok);
-
       if (ok) showMsg("사용 가능", "사용 가능한 이메일이에요.");
       else showMsg("중복", "이미 가입된 이메일이에요.");
     } catch (e: any) {
@@ -298,14 +249,11 @@ export default function SignupScreen() {
     setOtpCode(code);
     setOtpInput("");
     setPhoneVerified(false);
-
-    // ✅ 목업이라 화면에 코드 알려줌(개발용)
     showMsg("인증요청(목업)", `인증번호: ${code}\n(나중에 SMS 연동으로 교체)`);
   };
 
   const onVerifyOtp = () => {
     if (!otpRequested || !otpCode) return;
-
     if (otpInput.trim() === otpCode) {
       setPhoneVerified(true);
       showMsg("인증 완료", "휴대폰 인증이 완료됐어요.");
@@ -316,8 +264,11 @@ export default function SignupScreen() {
 
   const onNext = () => {
     if (!role) return;
+    if (!canNext) {
+      showMsg("입력 확인", "필수 입력/인증이 완료됐는지 확인해주세요.");
+      return;
+    }
 
-    // signupStore 저장
     setRoleStore(role);
     setAccount({
       email: normalizeEmail(email),
@@ -326,9 +277,9 @@ export default function SignupScreen() {
       phone: phone.trim(),
     });
 
-    // 다음 단계로
-    if (role === "shipper") router.push("/(auth)/signup-shipper");
-    else router.push("/(auth)/signup-driver");
+    // ✅ 공통 가입 완료 → 역할별 추가정보 화면
+    if (role === "shipper") router.replace("/(auth)/signup-shipper");
+    else router.replace("/(auth)/signup-driver");
   };
 
   return (
@@ -378,17 +329,12 @@ export default function SignupScreen() {
         </>
       ) : (
         <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={s.form}
-          >
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={s.form}>
             <View style={{ marginBottom: 18 }}>
               <Text style={s.title}>계정 정보를{"\n"}입력해주세요.</Text>
               <Text style={s.subtitle}>로그인과 연락에 사용됩니다.</Text>
             </View>
 
-            {/* 이메일 + 중복확인 */}
             <Text style={s.label}>이메일 (아이디)</Text>
             <View style={s.row}>
               <View style={{ flex: 1 }}>
@@ -404,29 +350,19 @@ export default function SignupScreen() {
                 />
               </View>
               <View style={s.rowGap} />
-              <Pressable
-                style={[s.miniBtn, checkingEmail && { opacity: 0.6 }]}
-                onPress={onCheckEmail}
-                disabled={checkingEmail}
-              >
+              <Pressable style={[s.miniBtn, checkingEmail && { opacity: 0.6 }]} onPress={onCheckEmail} disabled={checkingEmail}>
                 <Text style={s.miniBtnText}>{checkingEmail ? "확인중..." : "중복확인"}</Text>
               </Pressable>
             </View>
 
             {emailChecked ? (
-              <Text
-                style={[
-                  s.helper,
-                  { color: emailOkChecked ? c.status.success : c.status.danger },
-                ]}
-              >
+              <Text style={[s.helper, { color: emailOkChecked ? c.status.success : c.status.danger }]}>
                 {emailOkChecked ? "사용 가능한 이메일이에요." : "이미 가입된 이메일이에요."}
               </Text>
             ) : null}
 
             <View style={{ height: 16 }} />
 
-            {/* 비밀번호 */}
             <Text style={s.label}>비밀번호</Text>
             <TextField
               value={pw}
@@ -455,20 +391,11 @@ export default function SignupScreen() {
 
             <View style={{ height: 16 }} />
 
-            {/* 이름 */}
             <Text style={s.label}>이름</Text>
-            <TextField
-              value={name}
-              onChangeText={setName}
-              placeholder="실명 입력"
-              autoCapitalize="none"
-              inputWrapStyle={s.tfWrap}
-              inputStyle={s.tfInput}
-            />
+            <TextField value={name} onChangeText={setName} placeholder="실명 입력" autoCapitalize="none" inputWrapStyle={s.tfWrap} inputStyle={s.tfInput} />
 
             <View style={{ height: 16 }} />
 
-            {/* 휴대폰 + 인증요청 */}
             <Text style={s.label}>휴대폰 번호</Text>
             <View style={s.row}>
               <View style={{ flex: 1 }}>
@@ -492,7 +419,6 @@ export default function SignupScreen() {
               </Pressable>
             </View>
 
-            {/* 인증번호 입력/확인 */}
             {otpRequested && !phoneVerified ? (
               <>
                 <View style={{ height: 12 }} />
@@ -521,22 +447,11 @@ export default function SignupScreen() {
               </>
             ) : null}
 
-            {phoneVerified ? (
-              <Text style={[s.helper, { color: c.status.success }]}>휴대폰 인증이 완료됐어요.</Text>
-            ) : null}
+            {phoneVerified ? <Text style={[s.helper, { color: c.status.success }]}>휴대폰 인증이 완료됐어요.</Text> : null}
           </ScrollView>
 
-          {/* ✅ 바텀바가 클릭 막지 않도록 */}
           <View style={s.bottomBar} pointerEvents="box-none">
-            <Button
-              title="다음"
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={!canNext}
-              onPress={onNext}
-              style={s.nextBtn}
-            />
+            <Button title="다음" variant="primary" size="lg" fullWidth disabled={!canNext} onPress={onNext} style={s.nextBtn} />
           </View>
         </KeyboardAvoidingView>
       )}

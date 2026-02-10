@@ -1,8 +1,9 @@
-// srv/features/common/auth/ui/SignupDriverScreen.tsx
-import React, { useMemo, useState } from "react";
+// src/features/common/auth/ui/SignupDriverScreen.tsx
+import React, { useMemo, useState, useCallback } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -21,75 +22,167 @@ import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
 import { withAlpha } from "@/shared/utils/color";
 
-import { useSignupStore, type SignupState } from "@/features/common/auth/model/signupStore";
-import { useAuthStore } from "@/features/common/auth/model/authStore";
-
-type Role = "shipper" | "driver";
-type Step = "role" | "account";
-
-function normalizeEmail(v: string) {
-  return v.trim().toLowerCase();
-}
-function isEmailLike(v: string) {
-  const x = normalizeEmail(v);
-  return x.includes("@") && x.includes(".");
-}
-function digitsOnly(v: string) {
-  return v.replace(/[^0-9]/g, "");
-}
-function isPhoneLike(v: string) {
-  return digitsOnly(v).length >= 10;
-}
-function genCode6() {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
 function showMsg(title: string, msg: string) {
   if (Platform.OS === "web") window.alert(`${title}\n\n${msg}`);
   else Alert.alert(title, msg);
 }
 
-export default function SignupScreen() {
+type Option = { label: string; value: string };
+
+function digitsOnly(v: string) {
+  return v.replace(/[^0-9]/g, "");
+}
+function normalizePlate(v: string) {
+  return v.replace(/\s+/g, " ").trim();
+}
+
+function SelectField({
+  label,
+  value,
+  placeholder,
+  options,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: string | null;
+  placeholder: string;
+  options: Option[];
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
+  const t = useAppTheme();
+  const c = t.colors;
+
+  const [open, setOpen] = useState(false);
+  const selectedLabel = value ? options.find((o) => o.value === value)?.label : null;
+
+  const s = useMemo(() => {
+    return StyleSheet.create({
+      wrap: {
+        minHeight: 56,
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        backgroundColor: c.bg.surface,
+        borderWidth: 1,
+        borderColor: c.border.default,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+      } as ViewStyle,
+      text: { fontSize: 16, fontWeight: "800", color: c.text.primary } as TextStyle,
+      placeholder: { color: c.text.secondary } as TextStyle,
+      sheetBackdrop: {
+        flex: 1,
+        backgroundColor: withAlpha("#000000", 0.35),
+        alignItems: "center",
+        justifyContent: "flex-end",
+      } as ViewStyle,
+      sheet: {
+        width: "100%",
+        backgroundColor: c.bg.surface,
+        borderTopLeftRadius: 22,
+        borderTopRightRadius: 22,
+        paddingTop: 10,
+        paddingBottom: 16,
+        borderTopWidth: 1,
+        borderTopColor: withAlpha(c.border.default, 0.8),
+      } as ViewStyle,
+      sheetTitleRow: {
+        paddingHorizontal: 18,
+        paddingVertical: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+      } as ViewStyle,
+      sheetTitle: { fontSize: 16, fontWeight: "900", color: c.text.primary } as TextStyle,
+      option: {
+        paddingHorizontal: 18,
+        paddingVertical: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+      } as ViewStyle,
+      optionText: { fontSize: 16, fontWeight: "800", color: c.text.primary } as TextStyle,
+      divider: { height: 1, backgroundColor: withAlpha(c.border.default, 0.6) } as ViewStyle,
+    });
+  }, [c]);
+
+  return (
+    <>
+      <Pressable
+        onPress={() => setOpen(true)}
+        disabled={disabled}
+        style={({ pressed }) => [
+          s.wrap,
+          disabled && { opacity: 0.6 },
+          pressed && !disabled && { backgroundColor: c.bg.muted },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+      >
+        <Text style={[s.text, !selectedLabel && s.placeholder]}>
+          {selectedLabel ?? placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={18} color={c.text.secondary} />
+      </Pressable>
+
+      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+        <Pressable style={s.sheetBackdrop} onPress={() => setOpen(false)}>
+          <Pressable style={s.sheet} onPress={() => {}}>
+            <View style={s.sheetTitleRow}>
+              <Text style={s.sheetTitle}>{label}</Text>
+              <Pressable onPress={() => setOpen(false)} hitSlop={10}>
+                <Ionicons name="close" size={22} color={c.text.secondary} />
+              </Pressable>
+            </View>
+
+            <View style={s.divider} />
+
+            {options.map((o) => {
+              const active = o.value === value;
+              return (
+                <Pressable
+                  key={o.value}
+                  onPress={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                  style={({ pressed }) => [s.option, pressed && { backgroundColor: c.bg.muted }]}
+                >
+                  <Text style={s.optionText}>{o.label}</Text>
+                  {active ? <Ionicons name="checkmark" size={20} color={c.brand.primary} /> : null}
+                </Pressable>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
+export default function SignupDriverScreen() {
   const router = useRouter();
   const t = useAppTheme();
   const c = t.colors;
 
-  const setRoleStore = useSignupStore((s: SignupState) => s.setRole);
-  const setAccount = useSignupStore((s: SignupState) => s.setAccount);
+  // 닉네임
+  const [nickname, setNickname] = useState("");
+  const [nickChecked, setNickChecked] = useState(false);
+  const [nickOkChecked, setNickOkChecked] = useState(false);
+  const [checkingNick, setCheckingNick] = useState(false);
 
-  const checkEmailAvailable = useAuthStore((s) => s.checkEmailAvailable);
+  // 차량 정보
+  const [plateNo, setPlateNo] = useState("");
+  const [carType, setCarType] = useState<string | null>(null);
+  const [ton, setTon] = useState<string | null>(null);
+  const [expYears, setExpYears] = useState("");
 
-  const [step, setStep] = useState<Step>("role");
-  const [role, setRole] = useState<Role | null>(null);
-
-  const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-  const [pw2, setPw2] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-
-  // ✅ 이메일 중복확인 상태
-  const [emailChecked, setEmailChecked] = useState(false);
-  const [emailOkChecked, setEmailOkChecked] = useState(false);
-  const [checkingEmail, setCheckingEmail] = useState(false);
-
-  // ✅ 전화 인증(목업) 상태
-  const [otpRequested, setOtpRequested] = useState(false);
-  const [otpCode, setOtpCode] = useState<string | null>(null); // (개발용) 발급 코드 저장
-  const [otpInput, setOtpInput] = useState("");
-  const [phoneVerified, setPhoneVerified] = useState(false);
-
-  // 입력이 바뀌면 검증 상태 리셋 (핵심!)
-  const onChangeEmail = (v: string) => {
-    setEmail(v);
-    setEmailChecked(false);
-    setEmailOkChecked(false);
-  };
-  const onChangePhone = (v: string) => {
-    setPhone(v);
-    setPhoneVerified(false);
-    setOtpRequested(false);
-    setOtpCode(null);
-    setOtpInput("");
+  const onChangeNickname = (v: string) => {
+    setNickname(v);
+    setNickChecked(false);
+    setNickOkChecked(false);
   };
 
   const s = useMemo(() => {
@@ -98,85 +191,16 @@ export default function SignupScreen() {
     return StyleSheet.create({
       screen: { flex: 1, backgroundColor: c.bg.surface } as ViewStyle,
 
-      header: {
-        paddingHorizontal: S.lg,
-        paddingTop: S.md,
-        paddingBottom: S.md,
-      } as ViewStyle,
-      backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: "center",
-        justifyContent: "center",
-      } as ViewStyle,
+      header: { paddingHorizontal: S.lg, paddingTop: S.md, paddingBottom: S.md } as ViewStyle,
+      backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" } as ViewStyle,
 
       titleWrap: { paddingHorizontal: S.lg, paddingTop: S.sm } as ViewStyle,
-      title: {
-        fontSize: 30,
-        fontWeight: "900",
-        letterSpacing: -0.4,
-        color: c.text.primary,
-        lineHeight: 38,
-      } as TextStyle,
-      subtitle: {
-        marginTop: 10,
-        fontSize: 16,
-        fontWeight: "700",
-        color: c.text.secondary,
-        lineHeight: 22,
-      } as TextStyle,
-
-      cardList: {
-        paddingHorizontal: S.lg,
-        paddingTop: S.xl,
-      } as ViewStyle,
-
-      roleCard: {
-        backgroundColor: c.bg.surface,
-        borderWidth: 1,
-        borderColor: c.border.default,
-        borderRadius: 20,
-        paddingHorizontal: 18,
-        paddingVertical: 18,
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 14,
-
-        shadowColor: withAlpha("#000000", 0.06),
-        shadowOpacity: 1,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 6 },
-        elevation: 2,
-      } as ViewStyle,
-      roleIconCircle: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: c.border.default,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: c.bg.surface,
-        marginRight: 14,
-      } as ViewStyle,
-      roleTextWrap: { flex: 1 } as ViewStyle,
-      roleTitle: { fontSize: 18, fontWeight: "900", color: c.text.primary } as TextStyle,
-      roleDesc: {
-        marginTop: 6,
-        fontSize: 15,
-        fontWeight: "700",
-        color: c.text.secondary,
-      } as TextStyle,
+      title: { fontSize: 30, fontWeight: "900", letterSpacing: -0.4, color: c.text.primary, lineHeight: 38 } as TextStyle,
+      subtitle: { marginTop: 10, fontSize: 16, fontWeight: "700", color: c.text.secondary, lineHeight: 22 } as TextStyle,
 
       form: { paddingHorizontal: S.lg, paddingTop: S.xl, paddingBottom: 140 } as ViewStyle,
 
-      label: {
-        fontSize: 14,
-        fontWeight: "900",
-        color: c.text.secondary,
-        marginBottom: 8,
-      } as TextStyle,
+      label: { fontSize: 14, fontWeight: "900", color: c.text.secondary, marginBottom: 8 } as TextStyle,
 
       row: { flexDirection: "row", alignItems: "center" } as ViewStyle,
       rowGap: { width: 12 } as ViewStyle,
@@ -203,12 +227,10 @@ export default function SignupScreen() {
       } as ViewStyle,
       miniBtnText: { fontSize: 15, fontWeight: "900", color: c.text.primary } as TextStyle,
 
-      helper: {
-        marginTop: 8,
-        fontSize: 13,
-        fontWeight: "800",
-        color: c.text.secondary,
-      } as TextStyle,
+      helper: { marginTop: 8, fontSize: 13, fontWeight: "800", color: c.text.secondary } as TextStyle,
+
+      grid2: { flexDirection: "row", alignItems: "center" } as ViewStyle,
+      col: { flex: 1 } as ViewStyle,
 
       bottomBar: {
         position: "absolute",
@@ -222,7 +244,7 @@ export default function SignupScreen() {
         borderTopWidth: 1,
         borderTopColor: withAlpha(c.border.default, 0.7),
       } as ViewStyle,
-      nextBtn: {
+      submitBtn: {
         height: 76,
         borderRadius: 20,
         alignSelf: "stretch",
@@ -235,311 +257,191 @@ export default function SignupScreen() {
     });
   }, [c]);
 
-  const goBack = () => {
-    if (step === "account") {
-      setStep("role");
-      return;
-    }
-    router.back();
-  };
+  const nickFormatOk = nickname.trim().length >= 2;
+  const plateOk = normalizePlate(plateNo).length >= 6;
+  const expOk = digitsOnly(expYears).length > 0;
 
-  const chooseRole = (r: Role) => {
-    setRole(r);
-    setStep("account");
-  };
+  const canSubmit =
+    nickFormatOk &&
+    nickChecked &&
+    nickOkChecked &&
+    plateOk &&
+    !!carType &&
+    !!ton &&
+    expOk;
 
-  const emailFormatOk = isEmailLike(email);
-  const pwOk = pw.length >= 8;
-  const pw2Ok = pw2.length >= 8;
-  const pwMatch = pw.length > 0 && pw2.length > 0 && pw === pw2;
-  const nameOk = name.trim().length > 0;
-  const phoneFormatOk = isPhoneLike(phone);
-
-  // ✅ 다음 버튼 조건: 이메일 중복확인 통과 + 전화인증 완료 포함
-  const canNext =
-    !!role &&
-    emailFormatOk &&
-    emailChecked &&
-    emailOkChecked &&
-    pwOk &&
-    pw2Ok &&
-    pwMatch &&
-    nameOk &&
-    phoneFormatOk &&
-    phoneVerified;
-
-  const onCheckEmail = async () => {
-    if (!emailFormatOk) {
-      showMsg("이메일 확인", "이메일 형식을 확인해주세요.");
+  const onCheckNickname = useCallback(async () => {
+    if (!nickFormatOk) {
+      showMsg("닉네임 확인", "닉네임은 2글자 이상 입력해주세요.");
       return;
     }
     try {
-      setCheckingEmail(true);
-      const ok = await checkEmailAvailable(normalizeEmail(email));
-      setEmailChecked(true);
-      setEmailOkChecked(ok);
+      setCheckingNick(true);
 
-      if (ok) showMsg("사용 가능", "사용 가능한 이메일이에요.");
-      else showMsg("중복", "이미 가입된 이메일이에요.");
+      // ✅ 목업 중복확인 로직 (나중에 API로 교체)
+      await new Promise((r) => setTimeout(r, 350));
+      const bad = ["admin", "관리자", "test", "테스트"];
+      const ok = !bad.includes(nickname.trim().toLowerCase());
+
+      setNickChecked(true);
+      setNickOkChecked(ok);
+
+      if (ok) showMsg("사용 가능", "사용 가능한 닉네임이에요.");
+      else showMsg("중복", "이미 사용 중인 닉네임이에요.");
     } catch (e: any) {
       showMsg("오류", e?.message ?? "중복확인에 실패했어요.");
     } finally {
-      setCheckingEmail(false);
+      setCheckingNick(false);
     }
-  };
+  }, [nickFormatOk, nickname]);
 
-  const onRequestOtp = () => {
-    if (!phoneFormatOk) {
-      showMsg("휴대폰 확인", "휴대폰 번호를 확인해주세요.");
+  const onSubmit = () => {
+    if (!canSubmit) {
+      showMsg("입력 확인", "필수 입력/중복확인이 완료됐는지 확인해주세요.");
       return;
     }
-    const code = genCode6();
-    setOtpRequested(true);
-    setOtpCode(code);
-    setOtpInput("");
-    setPhoneVerified(false);
 
-    // ✅ 목업이라 화면에 코드 알려줌(개발용)
-    showMsg("인증요청(목업)", `인증번호: ${code}\n(나중에 SMS 연동으로 교체)`);
+    // ✅ 여기서 서버에 차주 추가정보 저장 후 성공 시 홈 이동
+    // driverApi.completeSignup({ nickname, plateNo, carType, ton, expYears: Number(digitsOnly(expYears)) })
+
+    router.replace("/(driver)/(tabs)");
   };
 
-  const onVerifyOtp = () => {
-    if (!otpRequested || !otpCode) return;
+  const carTypeOptions: Option[] = [
+    { label: "카고", value: "CARGO" },
+    { label: "윙바디", value: "WING" },
+    { label: "탑차", value: "TOP" },
+    { label: "냉동/냉장", value: "COLD" },
+    { label: "리프트", value: "LIFT" },
+  ];
 
-    if (otpInput.trim() === otpCode) {
-      setPhoneVerified(true);
-      showMsg("인증 완료", "휴대폰 인증이 완료됐어요.");
-      return;
-    }
-    showMsg("인증 실패", "인증번호가 올바르지 않아요.");
-  };
-
-  const onNext = () => {
-    if (!role) return;
-
-    // signupStore 저장
-    setRoleStore(role);
-    setAccount({
-      email: normalizeEmail(email),
-      password: pw,
-      name: name.trim(),
-      phone: phone.trim(),
-    });
-
-    // 다음 단계로
-    if (role === "shipper") router.push("/(auth)/signup-shipper");
-    else router.push("/(auth)/signup-driver");
-  };
+  const tonOptions: Option[] = [
+    { label: "1톤", value: "1T" },
+    { label: "1.4톤", value: "1_4T" },
+    { label: "2.5톤", value: "2_5T" },
+    { label: "3.5톤", value: "3_5T" },
+    { label: "5톤", value: "5T" },
+    { label: "8톤", value: "8T" },
+    { label: "11톤", value: "11T" },
+    { label: "25톤", value: "25T" },
+  ];
 
   return (
     <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
       <View style={s.header}>
-        <Pressable onPress={goBack} style={s.backBtn} hitSlop={10}>
+        <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={10}>
           <Ionicons name="arrow-back" size={26} color={c.text.primary} />
         </Pressable>
       </View>
 
-      {step === "role" ? (
-        <>
-          <View style={s.titleWrap}>
-            <Text style={s.title}>반갑습니다!{"\n"}어떤 분이신가요?</Text>
-            <Text style={s.subtitle}>서비스 이용 목적을 선택해주세요.</Text>
-          </View>
+      <View style={s.titleWrap}>
+        <Text style={s.title}>차량 정보를{"\n"}입력해주세요.</Text>
+        <Text style={s.subtitle}>정확한 배차를 위해 필수입니다.</Text>
+      </View>
 
-          <View style={s.cardList}>
+      <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={s.form}
+        >
+          {/* 닉네임 + 중복확인 */}
+          <Text style={s.label}>닉네임</Text>
+          <View style={s.row}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                value={nickname}
+                onChangeText={onChangeNickname}
+                placeholder="앱에서 사용할 닉네임"
+                autoCapitalize="none"
+                inputWrapStyle={s.tfWrap}
+                inputStyle={s.tfInput}
+                errorText={nickname.length > 0 && !nickFormatOk ? "닉네임은 2글자 이상 입력해주세요." : undefined}
+              />
+            </View>
+            <View style={s.rowGap} />
             <Pressable
-              onPress={() => chooseRole("shipper")}
-              style={({ pressed }) => [s.roleCard, pressed && { backgroundColor: c.brand.primarySoft }]}
+              style={[s.miniBtn, (checkingNick || !nickFormatOk) && { opacity: 0.6 }]}
+              onPress={onCheckNickname}
+              disabled={checkingNick || !nickFormatOk}
             >
-              <View style={s.roleIconCircle}>
-                <Ionicons name="cube-outline" size={24} color={c.text.primary} />
-              </View>
-              <View style={s.roleTextWrap}>
-                <Text style={s.roleTitle}>화주 (보내는 분)</Text>
-                <Text style={s.roleDesc}>화물을 등록하고 배차를 요청해요</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={22} color={c.text.secondary} />
-            </Pressable>
-
-            <Pressable
-              onPress={() => chooseRole("driver")}
-              style={({ pressed }) => [s.roleCard, pressed && { backgroundColor: c.brand.primarySoft }]}
-            >
-              <View style={s.roleIconCircle}>
-                <Ionicons name="car-outline" size={24} color={c.text.primary} />
-              </View>
-              <View style={s.roleTextWrap}>
-                <Text style={s.roleTitle}>차주 (기사님)</Text>
-                <Text style={s.roleDesc}>오더를 수행하고 수익을 내요</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={22} color={c.text.secondary} />
+              <Text style={s.miniBtnText}>{checkingNick ? "확인중..." : "중복확인"}</Text>
             </Pressable>
           </View>
-        </>
-      ) : (
-        <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={s.form}
-          >
-            <View style={{ marginBottom: 18 }}>
-              <Text style={s.title}>계정 정보를{"\n"}입력해주세요.</Text>
-              <Text style={s.subtitle}>로그인과 연락에 사용됩니다.</Text>
+
+          {nickChecked ? (
+            <Text style={[s.helper, { color: nickOkChecked ? c.status.success : c.status.danger }]}>
+              {nickOkChecked ? "사용 가능한 닉네임이에요." : "이미 사용 중인 닉네임이에요."}
+            </Text>
+          ) : null}
+
+          <View style={{ height: 16 }} />
+
+          {/* 차량 번호 */}
+          <Text style={s.label}>차량 번호</Text>
+          <TextField
+            value={plateNo}
+            onChangeText={setPlateNo}
+            placeholder="예: 80아 1234"
+            autoCapitalize="none"
+            inputWrapStyle={s.tfWrap}
+            inputStyle={s.tfInput}
+          />
+
+          <View style={{ height: 16 }} />
+
+          {/* 차종 / 톤수 (2열) */}
+          <View style={s.grid2}>
+            <View style={s.col}>
+              <Text style={s.label}>차종</Text>
+              <SelectField
+                label="차종"
+                value={carType}
+                placeholder="카고"
+                options={carTypeOptions}
+                onChange={setCarType}
+              />
             </View>
-
-            {/* 이메일 + 중복확인 */}
-            <Text style={s.label}>이메일 (아이디)</Text>
-            <View style={s.row}>
-              <View style={{ flex: 1 }}>
-                <TextField
-                  value={email}
-                  onChangeText={onChangeEmail}
-                  placeholder="example@email.com"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  inputWrapStyle={s.tfWrap}
-                  inputStyle={s.tfInput}
-                  errorText={email.length > 0 && !emailFormatOk ? "이메일 형식을 확인해주세요." : undefined}
-                />
-              </View>
-              <View style={s.rowGap} />
-              <Pressable
-                style={[s.miniBtn, checkingEmail && { opacity: 0.6 }]}
-                onPress={onCheckEmail}
-                disabled={checkingEmail}
-              >
-                <Text style={s.miniBtnText}>{checkingEmail ? "확인중..." : "중복확인"}</Text>
-              </Pressable>
+            <View style={s.rowGap} />
+            <View style={s.col}>
+              <Text style={s.label}>톤수</Text>
+              <SelectField
+                label="톤수"
+                value={ton}
+                placeholder="1톤"
+                options={tonOptions}
+                onChange={setTon}
+              />
             </View>
-
-            {emailChecked ? (
-              <Text
-                style={[
-                  s.helper,
-                  { color: emailOkChecked ? c.status.success : c.status.danger },
-                ]}
-              >
-                {emailOkChecked ? "사용 가능한 이메일이에요." : "이미 가입된 이메일이에요."}
-              </Text>
-            ) : null}
-
-            <View style={{ height: 16 }} />
-
-            {/* 비밀번호 */}
-            <Text style={s.label}>비밀번호</Text>
-            <TextField
-              value={pw}
-              onChangeText={setPw}
-              placeholder="8자리 이상 입력"
-              secureTextEntry
-              autoCapitalize="none"
-              inputWrapStyle={s.tfWrap}
-              inputStyle={s.tfInput}
-              errorText={pw.length > 0 && !pwOk ? "비밀번호는 8자리 이상이어야 해요." : undefined}
-            />
-
-            <View style={{ height: 16 }} />
-
-            <Text style={s.label}>비밀번호 확인</Text>
-            <TextField
-              value={pw2}
-              onChangeText={setPw2}
-              placeholder="한 번 더 입력"
-              secureTextEntry
-              autoCapitalize="none"
-              inputWrapStyle={s.tfWrap}
-              inputStyle={s.tfInput}
-              errorText={pw2.length > 0 && !pwMatch ? "비밀번호가 일치하지 않아요." : undefined}
-            />
-
-            <View style={{ height: 16 }} />
-
-            {/* 이름 */}
-            <Text style={s.label}>이름</Text>
-            <TextField
-              value={name}
-              onChangeText={setName}
-              placeholder="실명 입력"
-              autoCapitalize="none"
-              inputWrapStyle={s.tfWrap}
-              inputStyle={s.tfInput}
-            />
-
-            <View style={{ height: 16 }} />
-
-            {/* 휴대폰 + 인증요청 */}
-            <Text style={s.label}>휴대폰 번호</Text>
-            <View style={s.row}>
-              <View style={{ flex: 1 }}>
-                <TextField
-                  value={phone}
-                  onChangeText={onChangePhone}
-                  placeholder="010-1234-5678"
-                  keyboardType="phone-pad"
-                  inputWrapStyle={s.tfWrap}
-                  inputStyle={s.tfInput}
-                  errorText={phone.length > 0 && !phoneFormatOk ? "휴대폰 번호를 확인해주세요." : undefined}
-                />
-              </View>
-              <View style={s.rowGap} />
-              <Pressable
-                style={[s.miniBtn, (!phoneFormatOk || phoneVerified) && { opacity: 0.6 }]}
-                onPress={onRequestOtp}
-                disabled={!phoneFormatOk || phoneVerified}
-              >
-                <Text style={s.miniBtnText}>{phoneVerified ? "인증완료" : "인증요청"}</Text>
-              </Pressable>
-            </View>
-
-            {/* 인증번호 입력/확인 */}
-            {otpRequested && !phoneVerified ? (
-              <>
-                <View style={{ height: 12 }} />
-                <Text style={s.label}>인증번호</Text>
-                <View style={s.row}>
-                  <View style={{ flex: 1 }}>
-                    <TextField
-                      value={otpInput}
-                      onChangeText={setOtpInput}
-                      placeholder="6자리 입력"
-                      keyboardType="number-pad"
-                      inputWrapStyle={s.tfWrap}
-                      inputStyle={s.tfInput}
-                    />
-                  </View>
-                  <View style={s.rowGap} />
-                  <Pressable
-                    style={[s.miniBtn, otpInput.trim().length !== 6 && { opacity: 0.6 }]}
-                    onPress={onVerifyOtp}
-                    disabled={otpInput.trim().length !== 6}
-                  >
-                    <Text style={s.miniBtnText}>확인</Text>
-                  </Pressable>
-                </View>
-                <Text style={s.helper}>인증요청 후 받은 6자리 번호를 입력해주세요.</Text>
-              </>
-            ) : null}
-
-            {phoneVerified ? (
-              <Text style={[s.helper, { color: c.status.success }]}>휴대폰 인증이 완료됐어요.</Text>
-            ) : null}
-          </ScrollView>
-
-          {/* ✅ 바텀바가 클릭 막지 않도록 */}
-          <View style={s.bottomBar} pointerEvents="box-none">
-            <Button
-              title="다음"
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={!canNext}
-              onPress={onNext}
-              style={s.nextBtn}
-            />
           </View>
-        </KeyboardAvoidingView>
-      )}
+
+          <View style={{ height: 16 }} />
+
+          {/* 경력(년) */}
+          <Text style={s.label}>경력 (년)</Text>
+          <TextField
+            value={expYears}
+            onChangeText={setExpYears}
+            placeholder="예: 3"
+            keyboardType="number-pad"
+            inputWrapStyle={s.tfWrap}
+            inputStyle={s.tfInput}
+            errorText={expYears.length > 0 && digitsOnly(expYears).length === 0 ? "숫자만 입력해주세요." : undefined}
+          />
+        </ScrollView>
+
+        <View style={s.bottomBar} pointerEvents="box-none">
+          <Button
+            title="가입 완료"
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={!canSubmit}
+            onPress={onSubmit}
+            style={s.submitBtn}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
