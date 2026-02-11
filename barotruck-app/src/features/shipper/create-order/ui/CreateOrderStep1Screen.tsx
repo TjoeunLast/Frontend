@@ -37,6 +37,7 @@ function won(n: number) {
 }
 
 function parseWonInput(v: string) {
+  // "320,000" 같이 입력해도 OK
   const x = v.replace(/[^0-9]/g, "");
   return x ? parseInt(x, 10) : 0;
 }
@@ -296,6 +297,7 @@ export function ShipperCreateOrderStep1Screen() {
   const c = t.colors;
   const router = useRouter();
 
+  // ✅ 백엔드 enum 기반 옵션
   const carTypeOptions: Option[] = useMemo(
     () => [
       { label: "카고", value: "CARGO" },
@@ -391,6 +393,7 @@ export function ShipperCreateOrderStep1Screen() {
     );
   };
 
+  // ✅ 사진 첨부(선택): 지금은 더미(추후 이미지피커 연결)
   const [photos, setPhotos] = useState<{ id: string; name: string }[]>([
     { id: "p1", name: "IMG_01" },
   ]);
@@ -1076,7 +1079,7 @@ const s = StyleSheet.create({
   // photos
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 10 },
   photoBox: {
-    width: "48%",
+    width: "48.3%",
     height: 86,
     borderRadius: 14,
     borderWidth: 1,
@@ -1108,7 +1111,7 @@ const s = StyleSheet.create({
 
   // pay grid
   payGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 10 },
-  payTile: { width: "48%", borderRadius: 16, borderWidth: 1, padding: 14 },
+  payTile: { width: "48.3%", borderRadius: 16, borderWidth: 1, padding: 14 },
   payTitle: { fontSize: 14, fontWeight: "900", marginBottom: 6 },
   payDesc: { fontSize: 12, fontWeight: "700" },
 

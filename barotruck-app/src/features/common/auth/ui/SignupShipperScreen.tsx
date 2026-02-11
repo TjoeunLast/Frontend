@@ -1,5 +1,7 @@
 // src/features/common/auth/ui/SignupShipperScreen.tsx
-import React, { useMemo, useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -13,18 +15,13 @@ import {
   type ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
 
-import { useAppTheme } from "@/shared/hooks/useAppTheme";
-import { TextField } from "@/shared/ui/form/TextField";
-import { Button } from "@/shared/ui/base/Button";
-import { withAlpha } from "@/shared/utils/color";
-import type { RegisterRequest } from "@/shared/models/auth";
 import { AuthService } from "@/shared/api/authService";
-import { UserService } from "@/shared/api/userService";
-
-
+import { useAppTheme } from "@/shared/hooks/useAppTheme";
+import type { RegisterRequest } from "@/shared/models/auth";
+import { Button } from "@/shared/ui/base/Button";
+import { TextField } from "@/shared/ui/form/TextField";
+import { withAlpha } from "@/shared/utils/color";
 
 type ShipperType = "personal" | "business";
 
@@ -41,19 +38,23 @@ export default function SignupShipperScreen() {
   const t = useAppTheme();
   const c = t.colors;
 
-  const params = useLocalSearchParams<{ 
-    email: string; 
-    password: string; 
-    name: string; 
-    phone: string; 
+  // 이전 화면(SignupScreen)에서 넘겨받은 파라미터들
+  const params = useLocalSearchParams<{
+    email: string;
+    password: string;
+    name: string;
+    phone: string;
   }>();
+
   const [shipperType, setShipperType] = useState<ShipperType>("business");
 
+  // 닉네임 상태
   const [nickname, setNickname] = useState("");
   const [nickChecked, setNickChecked] = useState(false);
   const [nickOkChecked, setNickOkChecked] = useState(false);
-  const [checkingNick, setCheckingNick] = useState(false);
+  // const [checkingNick, setCheckingNick] = useState(false); // (중복확인 버튼이 없으므로 주석 처리)
 
+  // 사업자 정보 상태
   const [bizNo, setBizNo] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [ceoName, setCeoName] = useState("");
@@ -61,39 +62,18 @@ export default function SignupShipperScreen() {
   const [checkingBiz, setCheckingBiz] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const onChangeNickname = (v: string) => {
-    setNickname(v);
-    setNickChecked(false);
-    setNickOkChecked(false);
-  };
-
+  // 스타일 정의
   const s = useMemo(() => {
     const S = { xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 36 } as const;
 
     return StyleSheet.create({
       screen: { flex: 1, backgroundColor: c.bg.surface } as ViewStyle,
-
       header: { paddingHorizontal: S.lg, paddingTop: S.md, paddingBottom: S.md } as ViewStyle,
       backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" } as ViewStyle,
-
       titleWrap: { paddingHorizontal: S.lg, paddingTop: S.sm } as ViewStyle,
-      title: {
-        fontSize: 30,
-        fontWeight: "900",
-        letterSpacing: -0.4,
-        color: c.text.primary,
-        lineHeight: 38,
-      } as TextStyle,
-      subtitle: {
-        marginTop: 10,
-        fontSize: 16,
-        fontWeight: "700",
-        color: c.text.secondary,
-        lineHeight: 22,
-      } as TextStyle,
-
+      title: { fontSize: 30, fontWeight: "900", letterSpacing: -0.4, color: c.text.primary, lineHeight: 38 } as TextStyle,
+      subtitle: { marginTop: 10, fontSize: 16, fontWeight: "700", color: c.text.secondary, lineHeight: 22 } as TextStyle,
       form: { paddingHorizontal: S.lg, paddingTop: S.xl, paddingBottom: 140 } as ViewStyle,
-
       segmentWrap: {
         height: 56,
         borderRadius: 16,
@@ -118,12 +98,9 @@ export default function SignupShipperScreen() {
       } as ViewStyle,
       segText: { fontSize: 15, fontWeight: "900", color: c.text.secondary } as TextStyle,
       segTextActive: { color: c.brand.primary } as TextStyle,
-
       label: { fontSize: 14, fontWeight: "900", color: c.text.secondary, marginBottom: 8 } as TextStyle,
-
       row: { flexDirection: "row", alignItems: "center" } as ViewStyle,
       rowGap: { width: 12 } as ViewStyle,
-
       tfWrap: {
         minHeight: 56,
         borderRadius: 16,
@@ -133,7 +110,6 @@ export default function SignupShipperScreen() {
         borderColor: c.border.default,
       } as ViewStyle,
       tfInput: { fontSize: 16, fontWeight: "800", paddingVertical: 0 } as TextStyle,
-
       miniBtn: {
         height: 56,
         paddingHorizontal: 16,
@@ -145,9 +121,7 @@ export default function SignupShipperScreen() {
         justifyContent: "center",
       } as ViewStyle,
       miniBtnText: { fontSize: 15, fontWeight: "900", color: c.text.primary } as TextStyle,
-
       helper: { marginTop: 8, fontSize: 13, fontWeight: "800", color: c.text.secondary } as TextStyle,
-
       bottomBar: {
         position: "absolute",
         left: 0,
@@ -175,21 +149,19 @@ export default function SignupShipperScreen() {
 
   const goBack = () => router.back();
 
+  // 유효성 검사 로직
   const bizNoDigits = digitsOnly(bizNo);
-
   const nickFormatOk = nickname.trim().length >= 2;
 
   const bizNoOk = shipperType === "personal" ? true : bizNoDigits.length >= 10;
   const companyOk = shipperType === "personal" ? true : companyName.trim().length > 0;
   const ceoOk = shipperType === "personal" ? true : ceoName.trim().length > 0;
 
-  const canSubmit =
-    nickFormatOk &&
-    bizNoOk &&
-    companyOk &&
-    ceoOk;
+  const canSubmit = nickFormatOk && bizNoOk && companyOk && ceoOk;
 
-
+  // --------------------------------------------------------------------------
+  // 회원가입 제출 함수 (수정됨)
+  // --------------------------------------------------------------------------
   const onSubmit = async () => {
     if (submitting) return;
 
@@ -198,7 +170,7 @@ export default function SignupShipperScreen() {
       return;
     }
 
-    // ✅ 에러 수정: account.email -> params.email
+    // 파라미터 체크 (새로고침 등으로 인해 데이터가 날아갔을 경우 방지)
     if (!params.email || !params.password || !params.phone) {
       showMsg("계정 정보 없음", "기본 계정 정보를 먼저 입력해주세요.");
       router.replace("/(auth)/signup");
@@ -209,38 +181,44 @@ export default function SignupShipperScreen() {
     try {
       const payload: RegisterRequest = {
         nickname: nickname.trim(),
-        email: params.email,      // ✅ 수정
-        password: params.password, // ✅ 수정
-        phone: params.phone,       // ✅ 수정
+        email: params.email,
+        password: params.password,
+        phone: params.phone,
         role: "SHIPPER",
-        shipper: shipperType === "business"
-          ? {
-              companyName: companyName.trim(),
-              bizRegNum: bizNoDigits,
-              representative: ceoName.trim(),
-              bizAddress: "",
-            }
-          : undefined,
+        shipper:
+          shipperType === "business"
+            ? {
+                companyName: companyName.trim(),
+                bizRegNum: bizNoDigits,
+                representative: ceoName.trim(),
+                bizAddress: "",
+              }
+            : undefined,
       };
 
-      // ✅ 에러 수정: authApi.register -> AuthService.register
-      await AuthService.register(payload);
-      
+      // 1. 회원가입 요청 (DB 저장)
+      const reponse = await AuthService.register(payload);
 
-      
+      // 4. 메인 탭으로 이동
       router.replace("/(shipper)/(tabs)");
     } catch (e: any) {
-      showMsg("오류", e?.response?.data?.message || "회원가입에 실패했어요.");
+      console.log("❌ 서버 응답 에러 데이터:", e.response?.data);
+      
+      // 1. 변수 선언(const)을 확실히 하여 'errorMsg' 찾을 수 없음 에러 해결
+      // 2. 백엔드 구조에 맞춰 error 또는 message 필드 추출
+      const serverError = e.response?.data?.error || e.response?.data?.message;
+      const errorMsg = serverError || "회원가입 처리 중 오류가 발생했습니다.";
+      
+      showMsg("오류", errorMsg);
     } finally {
       setSubmitting(false);
     }
   };
 
-
-  // 컴포넌트 내부에 추가
+  // 사업자 조회 (목업)
   const onLookupBiz = async () => {
     if (shipperType !== "business") return;
-    
+
     if (bizNoDigits.length < 10) {
       showMsg("사업자 등록번호", "숫자 10자리 이상 입력해주세요.");
       return;
@@ -249,12 +227,12 @@ export default function SignupShipperScreen() {
     try {
       setCheckingBiz(true);
       // 목업 지연 시간
-      await new Promise((r) => setTimeout(r, 600)); 
-      
+      await new Promise((r) => setTimeout(r, 600));
+
       // API가 없다면 임시 데이터로 채워줍니다.
       if (!companyName.trim()) setCompanyName("(주)바로트럭물류");
       if (!ceoName.trim()) setCeoName(params.name || "대표자명");
-      
+
       showMsg("조회 성공", "사업자 정보 조회가 완료되었습니다.");
     } catch (e) {
       showMsg("오류", "사업자 조회 중 문제가 발생했습니다.");
@@ -262,7 +240,6 @@ export default function SignupShipperScreen() {
       setCheckingBiz(false);
     }
   };
-
 
   return (
     <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
@@ -272,7 +249,10 @@ export default function SignupShipperScreen() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.select({ ios: "padding", android: undefined })}
+        style={{ flex: 1 }}
+      >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -283,6 +263,7 @@ export default function SignupShipperScreen() {
             <Text style={s.subtitle}>개인 화주인지 사업자 화주인지 선택해주세요.</Text>
           </View>
 
+          {/* 개인/사업자 선택 탭 */}
           <View style={s.segmentWrap}>
             <Pressable
               onPress={() => setShipperType("personal")}
@@ -298,29 +279,45 @@ export default function SignupShipperScreen() {
             </Pressable>
           </View>
 
-          {/* ✅ 닉네임 + 중복확인 */}
+          {/* 닉네임 입력 */}
           <Text style={s.label}>닉네임</Text>
           <View style={s.row}>
             <View style={{ flex: 1 }}>
               <TextField
                 value={nickname}
-                onChangeText={setNickname} // 단순 저장
+                onChangeText={(v) => {
+                  setNickname(v);
+                  setNickChecked(false);
+                  setNickOkChecked(false);
+                }}
                 placeholder="앱에서 사용할 닉네임"
                 autoCapitalize="none"
                 inputWrapStyle={s.tfWrap}
                 inputStyle={s.tfInput}
-                errorText={nickname.length > 0 && !nickFormatOk ? "닉네임은 2글자 이상 입력해주세요." : undefined}
+                errorText={
+                  nickname.length > 0 && !nickFormatOk
+                    ? "닉네임은 2글자 이상 입력해주세요."
+                    : undefined
+                }
               />
             </View>
-            {/* 버튼과 rowGap 삭제 */}
           </View>
 
+          {/* 닉네임 상태 메시지 (필요 시 UI 부활 가능) */}
           {nickChecked ? (
-            <Text style={[s.helper, { color: nickOkChecked ? c.status.success : c.status.danger }]}>
-              {nickOkChecked ? "사용 가능한 닉네임이에요." : "이미 사용 중인 닉네임이에요."}
+            <Text
+              style={[
+                s.helper,
+                { color: nickOkChecked ? c.status.success : c.status.danger },
+              ]}
+            >
+              {nickOkChecked
+                ? "사용 가능한 닉네임이에요."
+                : "이미 사용 중인 닉네임이에요."}
             </Text>
           ) : null}
 
+          {/* 사업자 정보 입력 필드 */}
           {shipperType === "business" ? (
             <>
               <View style={{ height: 16 }} />
@@ -339,7 +336,10 @@ export default function SignupShipperScreen() {
                 </View>
                 <View style={s.rowGap} />
                 <Pressable
-                  style={[s.miniBtn, (checkingBiz || bizNoDigits.length < 10) && { opacity: 0.6 }]}
+                  style={[
+                    s.miniBtn,
+                    (checkingBiz || bizNoDigits.length < 10) && { opacity: 0.6 },
+                  ]}
                   onPress={onLookupBiz}
                   disabled={checkingBiz || bizNoDigits.length < 10}
                 >
@@ -376,6 +376,7 @@ export default function SignupShipperScreen() {
           )}
         </ScrollView>
 
+        {/* 하단 버튼 */}
         <View style={s.bottomBar} pointerEvents="box-none">
           <Button
             title="가입 완료"
