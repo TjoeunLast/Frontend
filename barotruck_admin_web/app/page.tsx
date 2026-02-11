@@ -1,70 +1,96 @@
-// app/page.tsx
-"use client"
+"use client";
 
-export default function Dashboard() {
-  // 데이터를 배열로 관리하면 코드가 훨씬 간결해집니다.
-  const orders = [
-    { id: 'ORD-2026-0202-001', start: '군산항', end: '경기 용인시', driver: '오시온', vehicle: '5톤 카고 (27오 1409)', status: '배차 완료', statusColor: 'bg-blue-50 text-blue-600 border-blue-100' },
-    { id: 'ORD-2026-0203-002', start: '서울 송파구', end: '경북 경주시', driver: '김대영', vehicle: '1톤 탑차 (55도 3316)', status: '운송 완료', statusColor: 'bg-green-50 text-green-600 border-green-100' },
-    { id: 'ORD-2026-0204-003', start: '서울 중랑구', end: '대구 달서구', driver: '이원희', vehicle: '11톤 윙바디 (13세 5112)', status: '운송 중', statusColor: 'bg-orange-50 text-orange-600 border-orange-100' },
-  ];
+import { useState, useEffect } from "react";
+import { AuthService } from './features/shared/api/authService';
 
-  return (
-    <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800">운송 현황 대시보드</h1>
+export default function BaroTruckMain() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) setIsLoggedIn(true);
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const data = await AuthService.login(email, password);
+      if (data && data.access_token) {
+        setIsLoggedIn(true);
+        alert("로그인에 성공했습니다!");
+      }
+    } catch (error: any) {
+      const errorResponse = error.response?.data;
+      console.error("🚨 서버 응답 에러:", errorResponse);
       
-      {/* 요약 카드 섹션 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: '오늘 주문', value: '42건', color: 'text-blue-600' },
-          { label: '배차 대기', value: '5건', color: 'text-orange-600' },
-          { label: '운송 중', value: '18건', color: 'text-green-600' },
-          { label: '검수 대기', value: '12건', color: 'text-red-600' },
-        ].map((item) => (
-          <div key={item.label} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-500 font-medium">{item.label}</p>
-            <p className={`text-3xl font-bold mt-2 ${item.color}`}>{item.value}</p>
+      // 서버에서 보내준 에러 메시지(아이디/비번 불일치 등)를 출력합니다.
+      const message = errorResponse?.error || "아이디 또는 비밀번호를 다시 확인하세요.";
+      alert(`로그인 실패: ${message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+  };
+
+  // 대시보드 UI는 로그인 성공 시 보여줍니다.
+  if (!isLoggedIn) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-100 w-full fixed inset-0 z-[9999]">
+        <div className="p-10 bg-white shadow-2xl rounded-3xl w-full max-w-md space-y-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-black text-blue-600 tracking-tighter uppercase italic">BAROTRUCK</h1>
+            <p className="text-slate-400 mt-2 font-medium">관리자 통합 제어 시스템</p>
           </div>
-        ))}
-      </div>
-
-      {/* 실시간 운송 피드 테이블 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2">
-          📡 실시간 운송 피드
-        </h2>
-
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b-2 border-slate-100">
-                <th className="p-4 text-center text-xs font-bold text-slate-500">주문번호</th>
-                <th className="p-4 text-center text-xs font-bold text-slate-500">상차지</th>
-                <th className="p-4 text-center text-xs font-bold text-slate-500">하차지</th>
-                <th className="p-4 text-center text-xs font-bold text-slate-500">차주 정보</th>
-                <th className="p-4 text-center text-xs font-bold text-slate-500">차량 정보</th>
-                <th className="p-4 text-center text-xs font-bold text-slate-500">상태</th>
-              </tr>
-            </thead>
-            
-            <tbody className="text-sm text-slate-700">
-              {orders.map((order) => (
-                <tr key={order.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-semibold text-blue-500">{order.id}</td>
-                  <td className="p-4">{order.start}</td>
-                  <td className="p-4">{order.end}</td>
-                  <td className="p-4 font-semibold">{order.driver}</td>
-                  <td className="p-4 text-slate-500">{order.vehicle}</td>
-                  <td className="p-4 text-center">
-                    <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${order.statusColor}`}>
-                      {order.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <input
+              type="email"
+              placeholder="admin@example.com"
+              className="w-full border border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="비밀번호"
+              className="w-full border border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button 
+              type="submit" 
+              disabled={loading}
+              className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all ${
+                loading ? 'bg-slate-400' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {loading ? "인증 확인 중..." : "시스템 접속"}
+            </button>
+          </form>
         </div>
+      </div>
+    );
+  }
+
+  // 로그인 성공 후 대시보드 레이아웃
+  return (
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-slate-800">📊 실시간 운송 관제 대시보드</h1>
+        <button onClick={handleLogout} className="px-4 py-2 bg-red-50 text-red-500 font-bold rounded-lg border border-red-100 hover:bg-red-100 transition">로그아웃</button>
+      </div>
+      <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-100 text-center">
+        <p className="text-slate-500 font-medium">관리자님, 환영합니다. 모든 시스템이 정상 작동 중입니다.</p>
       </div>
     </div>
   );
