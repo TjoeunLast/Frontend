@@ -1,5 +1,7 @@
 // src/features/common/auth/ui/SignupDriverScreen.tsx
-import React, { useMemo, useState, useCallback } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -9,21 +11,17 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
-  type TextStyle,
-  type ViewStyle,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
 
-import { useAppTheme } from "@/shared/hooks/useAppTheme";
-import { TextField } from "@/shared/ui/form/TextField";
-import { Button } from "@/shared/ui/base/Button";
-import { withAlpha } from "@/shared/utils/color";
 import { AuthService } from "@/shared/api/authService";
 import { UserService } from "@/shared/api/userService";
+import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { RegisterRequest } from "@/shared/models/auth";
+import { Button } from "@/shared/ui/base/Button";
+import { TextField } from "@/shared/ui/form/TextField";
+import { withAlpha } from "@/shared/utils/color";
 
 
 function showMsg(title: string, msg: string) {
@@ -241,7 +239,14 @@ export default function SignupDriverScreen() {
 
       router.replace("/(driver)/(tabs)");
     } catch (e: any) {
-      showMsg("오류", e.response?.data?.message ?? "가입 실패");
+      console.log("❌ 서버 응답 에러 데이터:", e.response?.data);
+      
+      // 1. 변수 선언(const)을 확실히 하여 'errorMsg' 찾을 수 없음 에러 해결
+      // 2. 백엔드 구조에 맞춰 error 또는 message 필드 추출
+      const serverError = e.response?.data?.error || e.response?.data?.message;
+      const errorMsg = serverError || "회원가입 처리 중 오류가 발생했습니다.";
+      
+      showMsg("오류", errorMsg);
     } finally {
       setSubmitting(false);
     }
