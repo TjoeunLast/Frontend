@@ -1,12 +1,11 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { OrderService } from "@/shared/api/orderService"; // [추가] 서비스 임포트
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
+import { OrderResponse } from "@/shared/models/order";
+import React, { useState } from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { Card } from "../base/Card";
 import { Badge } from "../feedback/Badge";
 import { OrderDetailModal } from "./OrderDetailModal";
-import { OrderService } from "@/shared/api/orderService"; // [추가] 서비스 임포트
-import { Alert } from "react-native"; // [추가] 에러 알림용
-import { OrderResponse } from "@/shared/models/order";
 
 export type OrderCardProps = OrderResponse & {
   isDirect?: boolean;

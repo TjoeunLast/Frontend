@@ -1,12 +1,19 @@
-import apiClient from './apiClient';
-import { RegisterRequest, AuthResponse } from '../models/auth';
 import * as SecureStore from 'expo-secure-store';
+import { AuthResponse, RegisterRequest } from '../models/auth';
+import apiClient from './apiClient';
 
 export const AuthService = {
   /** * 1. 회원가입 (POST /api/v1/auth/register) 
    */
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const res = await apiClient.post('/api/v1/auth/register', data);
+
+    // 성공 시 토큰을 SecureStore에 저장
+    if (res.data.access_token) {
+      await SecureStore.setItemAsync('userToken', res.data.access_token);
+      await SecureStore.setItemAsync('refreshToken', res.data.refresh_token);
+    }
+    
     return res.data;
   },
 

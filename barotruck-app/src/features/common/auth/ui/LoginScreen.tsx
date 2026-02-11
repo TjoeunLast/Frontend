@@ -17,11 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { TextField } from "@/shared/ui/form/TextField";
 import { Button } from "@/shared/ui/base/Button";
-import { withAlpha } from "@/shared/utils/color";
-import { authApi } from "@/features/common/auth/api";
 import { UserService } from "@/shared/api/userService";
-import type { RegisterRequest } from "@/shared/models/auth";
-import { useAuthStore } from "@/features/common/auth/model/authStore";
+import { AuthService } from "@/shared/api/authService";
 
 const ROUTES = {
   signup: "/(auth)/signup" as const,
@@ -39,7 +36,6 @@ export default function LoginScreen() {
   const router = useRouter();
   const t = useAppTheme();
   const c = t.colors;
-  const isMock = process.env.EXPO_PUBLIC_USE_MOCK_AUTH === "true";
 
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -53,191 +49,135 @@ export default function LoginScreen() {
     else Alert.alert("로그인 실패", msg);
   };
 
-  const goByRole = (role: "DRIVER" | "SHIPPER") => {
-    router.dismissAll();
-    router.replace(role === "DRIVER" ? ROUTES.driverTabs : ROUTES.shipperTabs);
-  };
-
-  const resolveRole = async () => {
-    if (isMock) {
-      const user = useAuthStore.getState().user;
-      if (!user) throw new Error("로그인 정보를 찾을 수 없어요.");
-      return user.role;
-    }
-    const me = await UserService.getMyInfo();
-    const role = me.role === "DRIVER" ? "DRIVER" : me.role === "SHIPPER" ? "SHIPPER" : null;
-    if (!role) throw new Error("권한 정보를 확인할 수 없어요.");
-    return role;
-  };
 
   const onLogin = async () => {
-    if (!canLogin) return;
-    try {
-      setSubmitting(true);
-      await authApi.login(email.trim(), pw);
-      const role = await resolveRole();
-      goByRole(role);
-    } catch (e: any) {
-      showError(e?.message ?? "로그인에 실패했어요.");
-    } finally {
-      setSubmitting(false);
+    if (submitting) return;
+  if (!canLogin) return;
+
+  setSubmitting(true);
+  try {
+
+    // 1. 실제 로그인 수행 (토큰 저장까지 자동 처리됨)
+    await AuthService.login(email, pw);
+
+    // 2. 로그인한 유저의 정보(Role 등) 가져오기
+    const me = await UserService.getMyInfo();
+    
+    // 3. 역할(Role)에 따른 화면 전환
+    if (me.role === "DRIVER") {
+      router.replace("/(driver)/(tabs)");
+    } else if (me.role === "SHIPPER") {
+      router.replace("/(shipper)/(tabs)");
+    } else {
+      throw new Error("정의되지 않은 사용자 권한입니다.");
     }
-  };
 
-  // ✅ 목업 유저가 없다면 심고(signUp) → 로그인(signIn)
-  const onMockLogin = async (kind: "shipper" | "driver") => {
-    try {
-      setSubmitting(true);
+  } catch (e: any) {
+    // 서버 에러 메시지 처리
+    const errorMsg = e.response?.data?.message || "로그인 정보를 확인해주세요.";
+    showError(errorMsg);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
-      const u = kind === "shipper" ? MOCK.shipper : MOCK.driver;
-      const payload: RegisterRequest = {
-        nickname: u.name,
-        email: u.email,
-        password: u.password,
-        phone: "01000000000",
-        role: u.role,
-      };
 
-      // 1) 일단 signIn 시도
-      try {
-        await authApi.login(u.email, u.password);
-        const role = await resolveRole();
-        goByRole(role);
-        return;
-      } catch {
-        // 2) 없으면 signUp으로 계정 생성 후 signIn
-        await authApi.register(payload);
-        await authApi.login(u.email, u.password);
-        const role = await resolveRole();
-        goByRole(role);
-      }
-    } catch (e: any) {
-      showError(e?.message ?? "목업 로그인에 실패했어요.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <SafeAreaView style={[s.screen, { backgroundColor: c.bg.surface }]} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={s.content}
-        >
-          <View style={s.container}>
-            <View style={s.brandWrap}>
-              <Text style={[s.brandTitle, { color: c.brand.primary }]}>Baro Truck</Text>
-              <Text style={[s.brandSubtitle, { color: c.text.secondary }]}>
-                빠르고 간편한 화물 배차의 시작
-              </Text>
-            </View>
-
-            {/* ✅ 목업 빠른 로그인 */}
-            <View style={s.mockRow}>
-              <Pressable
-                onPress={() => onMockLogin("shipper")}
-                style={({ pressed }) => [
-                  s.mockBtn,
-                  {
-                    backgroundColor: pressed ? withAlpha(c.brand.primarySoft, 0.7) : c.brand.primarySoft,
-                    borderColor: c.border.default,
-                  },
-                ]}
-              >
-                <Text style={[s.mockText, { color: c.text.primary }]}>화주로 체험 로그인</Text>
-              </Pressable>
-
-              <View style={{ width: 10 }} />
-
-              <Pressable
-                onPress={() => onMockLogin("driver")}
-                style={({ pressed }) => [
-                  s.mockBtn,
-                  {
-                    backgroundColor: pressed ? withAlpha(c.brand.accentSoft, 0.7) : c.brand.accentSoft,
-                    borderColor: c.border.default,
-                  },
-                ]}
-              >
-                <Text style={[s.mockText, { color: c.text.primary }]}>차주로 체험 로그인</Text>
-              </Pressable>
-            </View>
-
-            <View style={{ height: 14 }} />
-
-            <TextField
-              value={email}
-              onChangeText={setEmail}
-              placeholder="이메일"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              inputWrapStyle={[
-                s.inputWrap,
-                { backgroundColor: c.bg.surface, borderColor: c.border.default },
-              ]}
-              inputStyle={s.tfInput}
-            />
-
-            <View style={{ height: 12 }} />
-
-            <TextField
-              value={pw}
-              onChangeText={setPw}
-              placeholder="비밀번호"
-              secureTextEntry
-              autoCapitalize="none"
-              inputWrapStyle={[
-                s.inputWrap,
-                { backgroundColor: c.bg.surface, borderColor: c.border.default },
-              ]}
-              inputStyle={s.tfInput}
-            />
-
-            <View style={s.row}>
-              <Pressable onPress={() => setAutoLogin((v) => !v)} style={s.checkboxRow} hitSlop={10}>
-                <View style={[s.checkboxBox, { borderColor: c.border.default }]}>
-                  {autoLogin ? <Ionicons name="checkmark" size={16} color={c.brand.primary} /> : null}
-                </View>
-                <Text style={[s.checkboxLabel, { color: c.text.primary }]}>자동 로그인</Text>
-              </Pressable>
-
-              <Pressable onPress={() => router.push(ROUTES.resetPw)} hitSlop={10}>
-                <Text style={[s.link, { color: c.text.secondary }]}>비밀번호 찾기</Text>
-              </Pressable>
-            </View>
-
-            <Button
-              title={submitting ? "로그인 중..." : "로그인"}
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={!canLogin}
-              loading={submitting}
-              onPress={onLogin}
-              style={{
-                height: 64,
-                borderRadius: 18,
-                shadowColor: withAlpha(c.brand.primary, 0.25),
-                shadowOpacity: 1,
-                shadowRadius: 14,
-                shadowOffset: { width: 0, height: 8 },
-                elevation: 5,
-              }}
-            />
-
-            <View style={s.bottom}>
-              <Text style={[s.bottomText, { color: c.text.secondary }]}>아직 계정이 없으신가요?</Text>
-              <Pressable onPress={() => router.push(ROUTES.signup)} hitSlop={10}>
-                <Text style={[s.bottomLink, { color: c.brand.primary }]}>회원가입</Text>
-              </Pressable>
-            </View>
+return (
+  <SafeAreaView style={[s.screen, { backgroundColor: c.bg.surface }]} edges={["top", "bottom"]}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={s.content}
+      >
+        <View style={s.container}>
+          {/* 로고 섹션 */}
+          <View style={s.brandWrap}>
+            <Text style={[s.brandTitle, { color: c.brand.primary }]}>Baro Truck</Text>
+            <Text style={[s.brandSubtitle, { color: c.text.secondary }]}>
+              빠르고 간편한 화물 배차의 시작
+            </Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
+
+          <View style={{ height: 14 }} />
+
+          {/* 이메일 입력 */}
+          <TextField
+            value={email}
+            onChangeText={setEmail}
+            placeholder="이메일"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            editable={!submitting} // 로딩 중 수정 불가
+            inputWrapStyle={[
+              s.inputWrap,
+              { backgroundColor: c.bg.surface, borderColor: c.border.default },
+            ]}
+            inputStyle={s.tfInput}
+          />
+
+          <View style={{ height: 12 }} />
+
+          {/* 비밀번호 입력 */}
+          <TextField
+            value={pw}
+            onChangeText={setPw}
+            placeholder="비밀번호"
+            secureTextEntry
+            autoCapitalize="none"
+            editable={!submitting} // 로딩 중 수정 불가
+            inputWrapStyle={[
+              s.inputWrap,
+              { backgroundColor: c.bg.surface, borderColor: c.border.default },
+            ]}
+            inputStyle={s.tfInput}
+          />
+
+          {/* 유틸리티 행 (자동로그인/비번찾기) */}
+          <View style={s.row}>
+            <Pressable 
+              onPress={() => setAutoLogin((v) => !v)} 
+              style={s.checkboxRow} 
+              disabled={submitting}
+            >
+              <View style={[s.checkboxBox, { borderColor: c.border.default }]}>
+                {autoLogin && <Ionicons name="checkmark" size={16} color={c.brand.primary} />}
+              </View>
+              <Text style={[s.checkboxLabel, { color: c.text.primary }]}>자동 로그인</Text>
+            </Pressable>
+
+            <Pressable onPress={() => router.push(ROUTES.resetPw)} disabled={submitting}>
+              <Text style={[s.link, { color: c.text.secondary }]}>비밀번호 찾기</Text>
+            </Pressable>
+          </View>
+
+          {/* 로그인 버튼 */}
+          <Button
+            title={submitting ? "로그인 중..." : "로그인"}
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={!canLogin || submitting}
+            loading={submitting}
+            onPress={onLogin}
+            style={s.loginBtn}
+          />
+
+          {/* 회원가입 유도 */}
+          <View style={s.bottom}>
+            <Text style={[s.bottomText, { color: c.text.secondary }]}>아직 계정이 없으신가요?</Text>
+            <Pressable onPress={() => router.push(ROUTES.signup)} disabled={submitting}>
+              <Text style={[s.bottomLink, { color: c.brand.primary }]}>회원가입</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  </SafeAreaView>
+);
 }
 
 const s = StyleSheet.create({
@@ -302,4 +242,12 @@ const s = StyleSheet.create({
   },
   bottomText: { fontSize: 16, fontWeight: "700" },
   bottomLink: { marginLeft: 10, fontSize: 16, fontWeight: "900", textDecorationLine: "underline" },
+
+  // [추가] 로그인 버튼 스타일 (Cannot find name 'loginBtn' 해결)
+  loginBtn: {
+    height: 64,
+    borderRadius: 18,
+    marginTop: 20, // 버튼 간격 조정
+    // 그림자 등 추가 스타일이 필요하면 여기에 작성하세요.
+  },
 });
