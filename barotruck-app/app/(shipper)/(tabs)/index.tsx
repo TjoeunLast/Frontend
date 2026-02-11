@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function ShipperHomeScreen() {
   const t = useAppTheme();
