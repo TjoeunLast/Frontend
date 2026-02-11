@@ -1,24 +1,17 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
-
+import { Bell, Info, Package } from "lucide-react-native";
+import { Button, IconButton, Divider } from "@/shared/ui/base";
 import {
-  AppLayout,
-  AppTopBar,
-  BottomCTA,
-  Button,
-  Card,
-  Badge,
-  Chip,
-  SegmentedTabs,
-  Divider,
   Dialog,
+  EmptyState,
   LoadingOverlay,
-  TextField,
   useToast,
-} from "@/shared/ui";
+} from "@/shared/ui/feedback";
+import { Chip, SegmentedTabs, TextField } from "@/shared/ui/form";
+import { OrderCard } from "@/shared/ui/business";
+import { AppLayout, AppTopBar, BottomCTA } from "@/shared/ui/layout";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
-
-type SortKey = "price" | "distance" | "latest";
 
 export default function UiPreviewScreen() {
   const t = useAppTheme();
@@ -27,213 +20,200 @@ export default function UiPreviewScreen() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const [chipA, setChipA] = useState(true);
-  const [chipB, setChipB] = useState(false);
-
-  const [sort, setSort] = useState<SortKey>("price");
-
-  // TextField 테스트용
+  const [sort, setSort] = useState("latest");
+  const [selectedChip, setSelectedChip] = useState("all");
   const [email, setEmail] = useState("");
-  const [pwd, setPwd] = useState("");
 
   const sortItems = useMemo(
     () => [
-      { key: "price" as const, label: "고단가순" },
-      { key: "distance" as const, label: "가까운순" },
-      { key: "latest" as const, label: "최신순" },
+      { key: "latest", label: "최신순" },
+      { key: "distance", label: "거리순" },
+      { key: "price", label: "운임순" },
     ],
-    []
+    [],
   );
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg.canvas }}>
-      <AppTopBar title="UI Preview" />
+      <AppTopBar
+        title="디자인 시스템 프리뷰"
+        right={
+          <IconButton onPress={() => toast.show("알림 목록을 확인합니다.")}>
+            <Bell size={22} color={c.text.primary} />
+          </IconButton>
+        }
+      />
 
       <AppLayout
         scroll
-        padding={12}
-        // ✅ BottomCTA가 화면 하단을 덮으니까 스크롤 여백 확보
-        contentContainerStyle={{ gap: 12, paddingBottom: 140 }}
+        padding={20}
+        contentContainerStyle={{ gap: 40, paddingBottom: 140 }}
       >
-        {/* Buttons */}
-        <Card>
-          <Text style={[s.sectionTitle, { color: c.text.primary }]}>Buttons</Text>
-
-          <View style={s.row}>
-            <Button title="Primary" onPress={() => toast.show("Primary 클릭", "info")} />
-            <Button title="Accent" variant="accent" onPress={() => toast.show("Accent 클릭", "success")} />
+        <View style={s.section}>
+          <View style={s.sectionHeader}>
+            <Package size={20} color={c.brand.primary} />
+            <Text style={[s.sectionTitle, { color: c.text.primary }]}>
+              오더 카드 케이스
+            </Text>
           </View>
 
-          <View style={s.row}>
-            <Button title="Outline" variant="outline" onPress={() => toast.show("Outline 클릭")} />
-            <Button title="Ghost" variant="ghost" onPress={() => toast.show("Ghost 클릭")} />
+          <View style={{ gap: 16 }}>
+
           </View>
+        </View>
 
-          <View style={s.row}>
-            <Button title="Small" size="sm" onPress={() => toast.show("Small")} />
-            <Button title="Large" size="lg" onPress={() => toast.show("Large")} />
-          </View>
+        {/* <Divider /> */}
 
-          <View style={s.row}>
-            <Button title="Loading" loading onPress={() => {}} />
-            <Button title="Disabled" disabled onPress={() => {}} />
-          </View>
-        </Card>
-
-        <Divider />
-
-        {/* Badges */}
-        <Card>
-          <Text style={[s.sectionTitle, { color: c.text.primary }]}>Badges</Text>
-
-          <View style={s.rowWrap}>
-            <Badge label="Success" tone="success" />
-            <Badge label="Warning" tone="warning" />
-            <Badge label="Danger" tone="danger" />
-            <Badge label="Info" tone="info" />
-            <Badge label="Neutral" tone="neutral" />
-          </View>
-        </Card>
-
-        <Divider />
-
-        {/* Chips */}
-        <Card>
-          <Text style={[s.sectionTitle, { color: c.text.primary }]}>Chips</Text>
-
-          <View style={s.rowWrap}>
-            <Chip label="내 주변 오더" selected={chipA} onPress={() => setChipA((v) => !v)} />
-            <Chip label="내 차종 오더" selected={chipB} onPress={() => setChipB((v) => !v)} />
-          </View>
-
-          <Text style={[s.caption, { color: c.text.secondary }]}>
-            선택 상태: A={String(chipA)} / B={String(chipB)}
+        <View style={s.section}>
+          <Text
+            style={[
+              s.sectionTitle,
+              { color: c.text.primary, marginBottom: 16, marginTop: 20 },
+            ]}
+          >
+            필터 및 입력 양식
           </Text>
-        </Card>
 
-        <Divider />
+          <View style={{ gap: 20 }}>
+            <SegmentedTabs items={sortItems} value={sort} onChange={setSort} />
 
-        {/* SegmentedTabs */}
-        <Card>
-          <Text style={[s.sectionTitle, { color: c.text.primary }]}>SegmentedTabs</Text>
-          <SegmentedTabs items={sortItems} value={sort} onChange={setSort} />
-          <Text style={[s.caption, { color: c.text.secondary }]}>선택: {sort}</Text>
-        </Card>
+            <View style={s.chipRow}>
+              <Chip
+                label="전체"
+                selected={selectedChip === "all"}
+                onPress={() => setSelectedChip("all")}
+              />
+              <Chip
+                label="왕복 전용"
+                selected={selectedChip === "round"}
+                onPress={() => setSelectedChip("round")}
+              />
+              <Chip label="선택 불가" disabled />
+            </View>
 
-        <Divider />
-
-        {/* TextField */}
-        <Card>
-          <Text style={[s.sectionTitle, { color: c.text.primary }]}>TextField</Text>
-
-          <View style={{ gap: 10 }}>
             <TextField
-              label="이메일"
-              required
-              placeholder="example@barotruck.com"
+              label="이메일 계정"
+              placeholder="example@email.com"
               value={email}
               onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              helperText="로그인에 사용돼"
-            />
-
-            <TextField
-              label="비밀번호"
-              placeholder="8자 이상"
-              value={pwd}
-              onChangeText={setPwd}
-              secureTextEntry
-              errorText={pwd.length > 0 && pwd.length < 8 ? "8자 이상 입력해줘" : undefined}
             />
           </View>
-        </Card>
+        </View>
 
-        <Divider />
+        {/* <Divider /> */}
 
-        {/* Dialog & Overlay */}
-        <Card>
-          <Text style={[s.sectionTitle, { color: c.text.primary }]}>Dialog / LoadingOverlay</Text>
+        <View style={s.section}>
+          <Text
+            style={[
+              s.sectionTitle,
+              { color: c.text.primary, marginBottom: 16, marginTop: 20 },
+            ]}
+          >
+            버튼 스타일링
+          </Text>
 
-          <View style={s.row}>
-            <Button title="Dialog 열기" variant="outline" onPress={() => setDialogOpen(true)} />
+          <View style={{ gap: 12 }}>
+            <View style={s.row}>
+              <Button
+                title="확인"
+                style={{ flex: 1 }}
+                onPress={() => toast.show("확인 버튼 클릭", "success")}
+              />
+              <Button
+                title="취소"
+                variant="outline"
+                style={{ flex: 1 }}
+                onPress={() => {}}
+              />
+            </View>
             <Button
-              title="로딩 표시"
+              title="로딩 오버레이 테스트"
               variant="accent"
+              fullWidth
               onPress={() => {
                 setLoading(true);
-                setTimeout(() => setLoading(false), 1200);
+                setTimeout(() => setLoading(false), 1500);
               }}
             />
           </View>
-        </Card>
+        </View>
 
-        <Divider />
-
-        {/* Toast */}
-        <Card>
-          <Text style={[s.sectionTitle, { color: c.text.primary }]}>Toast</Text>
-
-          <View style={s.rowWrap}>
-            <Button title="Info" size="sm" variant="outline" onPress={() => toast.show("정보 토스트", "info")} />
-            <Button title="Success" size="sm" variant="outline" onPress={() => toast.show("성공!", "success")} />
-            <Button title="Warning" size="sm" variant="outline" onPress={() => toast.show("주의!", "warning")} />
-            <Button title="Danger" size="sm" variant="outline" onPress={() => toast.show("에러 발생", "danger")} />
-            <Button title="Neutral" size="sm" variant="outline" onPress={() => toast.show("기본 토스트")} />
-          </View>
-        </Card>
+        <View style={s.emptyContainer}>
+          <EmptyState
+            title="진행 중인 오더가 없습니다"
+            description="주변 오더를 찾으려면 목록을 새로고침 하세요"
+            actionLabel="목록 새로고침"
+            onPressAction={() => toast.show("데이터를 갱신합니다.")}
+          />
+        </View>
       </AppLayout>
 
-      {/* ✅ 하단 고정 CTA */}
       <BottomCTA
-        secondary={{
-          title: "취소",
-          variant: "outline",
-          onPress: () => toast.show("취소", "neutral"),
-        }}
         primary={{
-          title: "다음",
-          variant: "primary",
-          onPress: () => toast.show("다음", "success"),
-          disabled: email.length === 0 || pwd.length < 8,
+          title: "설정 저장",
+          onPress: () => setDialogOpen(true),
+        }}
+        secondary={{
+          title: "초기화",
+          variant: "outline",
+          onPress: () => toast.show("입력값이 초기화되었습니다."),
         }}
       >
-        <Text style={{ color: c.text.secondary, fontSize: 12, fontWeight: "800" }}>
-          이메일/비밀번호 입력 테스트 (CTA는 하단 고정)
-        </Text>
+        <View style={s.ctaHelper}>
+          <Info size={14} color={c.text.secondary} />
+          <Text style={s.ctaHelperText}>
+            저장 전 입력 정보를 다시 확인해주세요
+          </Text>
+        </View>
       </BottomCTA>
 
-      {/* Dialog */}
       <Dialog
         open={dialogOpen}
-        title="확인"
-        description="이 작업을 진행할까?"
+        title="변경사항 저장"
+        description="입력하신 UI 설정값을 서버에 반영하시겠습니까"
         onClose={() => setDialogOpen(false)}
+        primary={{
+          label: "저장",
+          onPress: () => {
+            setDialogOpen(false);
+            toast.show("성공적으로 반영되었습니다!", "success");
+          },
+        }}
         secondary={{
-          label: "취소",
+          label: "닫기",
           variant: "outline",
           onPress: () => setDialogOpen(false),
         }}
-        primary={{
-          label: "진행",
-          variant: "primary",
-          onPress: () => {
-            setDialogOpen(false);
-            toast.show("진행했어!", "success");
-          },
-        }}
       />
 
-      {/* LoadingOverlay */}
-      <LoadingOverlay open={loading} label="처리 중…" />
+      <LoadingOverlay open={loading} label="정보를 처리하고 있습니다" />
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  sectionTitle: { fontSize: 14, fontWeight: "900", marginBottom: 10 },
-  row: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
-  rowWrap: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
-  caption: { marginTop: 10, fontSize: 12, fontWeight: "700" },
+  section: { width: "100%" },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  sectionTitle: { fontSize: 18, fontWeight: "800" },
+  row: { flexDirection: "row", gap: 12 },
+  chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  emptyContainer: {
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    borderRadius: 16,
+    backgroundColor: "#F8FAFC",
+    paddingVertical: 20,
+  },
+  ctaHelper: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  ctaHelperText: { fontSize: 12, color: "#64748B" },
 });

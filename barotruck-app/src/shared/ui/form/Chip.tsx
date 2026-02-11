@@ -1,5 +1,12 @@
 import React, { memo } from "react";
-import { Pressable, StyleSheet, Text, View, type TextStyle, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 
 export type ChipProps = {
@@ -34,8 +41,15 @@ export const Chip = memo(function Chip({
       onPress={onPress}
       style={({ pressed }) => [
         s.base,
-        { backgroundColor: bg, borderColor: border, opacity: disabled ? 0.5 : 1 },
-        pressed && !disabled && { backgroundColor: selected ? c.brand.primarySoft : c.bg.muted },
+        {
+          backgroundColor: bg,
+          borderColor: border,
+          opacity: disabled ? 0.5 : 1,
+        },
+        pressed &&
+          !disabled && {
+            backgroundColor: selected ? c.brand.primarySoft : c.bg.muted,
+          },
         style,
       ]}
     >
@@ -52,12 +66,22 @@ export const Chip = memo(function Chip({
 const s = StyleSheet.create({
   base: {
     borderWidth: 1,
-    borderRadius: 999,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
     alignSelf: "flex-start",
   },
-  row: { flexDirection: "row", alignItems: "center", gap: 8 },
-  slot: { alignItems: "center", justifyContent: "center" },
-  text: { fontSize: 13, fontWeight: "800" },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  slot: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  text: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
 });

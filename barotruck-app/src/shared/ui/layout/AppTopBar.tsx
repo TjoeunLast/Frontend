@@ -1,5 +1,11 @@
 import React, { memo } from "react";
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewStyle,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 
@@ -65,9 +71,19 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     borderBottomWidth: 1,
   },
-  side: { width: 56, alignItems: "center", justifyContent: "center" },
-  center: { flex: 1, alignItems: "center" },
-  title: { fontSize: 16, fontWeight: "800" },
+  side: {
+    width: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  center: {
+    flex: 1,
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
   iconBtn: {
     width: 40,
     height: 40,
@@ -75,5 +91,8 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  placeholder: { width: 40, height: 40 },
+  placeholder: {
+    width: 40,
+    height: 40,
+  },
 });

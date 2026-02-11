@@ -1,11 +1,19 @@
 import React, { memo } from "react";
-import { Pressable, StyleSheet, View, type PressableProps, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableProps,
+  type ViewStyle,
+} from "react-native";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
+
+type IconButtonVariant = "ghost" | "soft" | "outline";
 
 type Props = Omit<PressableProps, "style"> & {
   children: React.ReactNode;
-  size?: number; // default 40
-  variant?: "ghost" | "soft";
+  size?: number;
+  variant?: IconButtonVariant;
   style?: ViewStyle;
 };
 
@@ -20,18 +28,41 @@ export const IconButton = memo(function IconButton({
   const t = useAppTheme();
   const c = t.colors;
 
-  const bg = variant === "soft" ? c.bg.muted : "transparent";
-
   return (
     <Pressable
       disabled={disabled}
+      hitSlop={8}
       {...props}
-      style={({ pressed }) => [
-        s.base,
-        { width: size, height: size, borderRadius: 12, backgroundColor: bg, opacity: disabled ? 0.5 : 1 },
-        pressed && !disabled && { backgroundColor: c.brand.primarySoft },
-        style,
-      ]}
+      style={({ pressed }) => {
+        let backgroundColor = "transparent";
+        let borderColor = "transparent";
+        let borderWidth = 0;
+
+        if (variant === "soft") {
+          backgroundColor = c.bg.muted;
+        } else if (variant === "outline") {
+          borderColor = c.border.default;
+          borderWidth = 1;
+        }
+
+        if (pressed && !disabled) {
+          backgroundColor = c.brand.primarySoft;
+        }
+
+        return [
+          s.base,
+          {
+            width: size,
+            height: size,
+            borderRadius: 12,
+            backgroundColor,
+            borderColor,
+            borderWidth,
+            opacity: disabled ? 0.5 : 1,
+          },
+          style,
+        ];
+      }}
     >
       <View style={s.center}>{children}</View>
     </Pressable>
@@ -39,6 +70,14 @@ export const IconButton = memo(function IconButton({
 });
 
 const s = StyleSheet.create({
-  base: { alignSelf: "flex-start" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  base: {
+    alignSelf: "flex-start",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  center: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
 });

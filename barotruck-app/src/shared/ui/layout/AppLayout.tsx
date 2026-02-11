@@ -4,6 +4,8 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  Platform,
+  KeyboardAvoidingView,
   type ViewProps,
   type ViewStyle,
   type ScrollViewProps,
@@ -49,13 +51,20 @@ export const AppLayout = memo(function AppLayout({
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: c.bg.canvas }]}>
-      <View {...props} style={[{ padding }, style]}>
-        {children}
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <View {...props} style={[{ padding }, style, { flex: 1 }]}>
+          {children}
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 });
 
 const s = StyleSheet.create({
-  safe: { flex: 1 },
+  safe: {
+    flex: 1,
+  },
 });
