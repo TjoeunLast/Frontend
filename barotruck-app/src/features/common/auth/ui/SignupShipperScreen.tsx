@@ -202,7 +202,7 @@ export default function SignupShipperScreen() {
 
       // 2. [중요] 회원가입 성공 후 즉시 로그인 처리 (토큰 발급)
       // 이 부분이 있어야 메인 화면 진입 시 튕기지 않습니다.
-      await AuthService.login(params.email, params.password);
+     
 
       // 3. (선택) 내 정보 갱신하여 앱 전역 상태 업데이트
       try {
