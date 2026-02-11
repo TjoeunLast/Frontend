@@ -17,7 +17,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AuthService } from "@/shared/api/authService";
-import { UserService } from "@/shared/api/userService";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import type { RegisterRequest } from "@/shared/models/auth";
 import { Button } from "@/shared/ui/base/Button";
@@ -198,24 +197,18 @@ export default function SignupShipperScreen() {
       };
 
       // 1. 회원가입 요청 (DB 저장)
-      await AuthService.register(payload);
-
-      // 2. [중요] 회원가입 성공 후 즉시 로그인 처리 (토큰 발급)
-      // 이 부분이 있어야 메인 화면 진입 시 튕기지 않습니다.
-     
-
-      // 3. (선택) 내 정보 갱신하여 앱 전역 상태 업데이트
-      try {
-        await UserService.getMyInfo();
-      } catch (err) {
-        // 정보 갱신 실패는 치명적이지 않으므로 무시하고 진행
-        console.log("UserInfo update failed:", err);
-      }
+      const reponse = await AuthService.register(payload);
 
       // 4. 메인 탭으로 이동
       router.replace("/(shipper)/(tabs)");
     } catch (e: any) {
-      const errorMsg = e?.response?.data?.message || "회원가입에 실패했어요.";
+      console.log("❌ 서버 응답 에러 데이터:", e.response?.data);
+      
+      // 1. 변수 선언(const)을 확실히 하여 'errorMsg' 찾을 수 없음 에러 해결
+      // 2. 백엔드 구조에 맞춰 error 또는 message 필드 추출
+      const serverError = e.response?.data?.error || e.response?.data?.message;
+      const errorMsg = serverError || "회원가입 처리 중 오류가 발생했습니다.";
+      
       showMsg("오류", errorMsg);
     } finally {
       setSubmitting(false);
