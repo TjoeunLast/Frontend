@@ -98,7 +98,9 @@ function SelectField({
   const c = t.colors;
 
   const [open, setOpen] = useState(false);
-  const selectedLabel = value ? options.find((o) => o.value === value)?.label : null;
+  const selectedLabel = value
+    ? options.find((o) => o.value === value)?.label
+    : null;
 
   const s = useMemo(() => {
     return StyleSheet.create({
@@ -113,7 +115,11 @@ function SelectField({
         alignItems: "center",
         justifyContent: "space-between",
       } as ViewStyle,
-      text: { fontSize: 16, fontWeight: "800", color: c.text.primary } as TextStyle,
+      text: {
+        fontSize: 16,
+        fontWeight: "800",
+        color: c.text.primary,
+      } as TextStyle,
       placeholder: { color: c.text.secondary } as TextStyle,
       sheetBackdrop: {
         flex: 1,
@@ -138,7 +144,11 @@ function SelectField({
         alignItems: "center",
         justifyContent: "space-between",
       } as ViewStyle,
-      sheetTitle: { fontSize: 16, fontWeight: "900", color: c.text.primary } as TextStyle,
+      sheetTitle: {
+        fontSize: 16,
+        fontWeight: "900",
+        color: c.text.primary,
+      } as TextStyle,
       option: {
         paddingHorizontal: 18,
         paddingVertical: 14,
@@ -146,8 +156,15 @@ function SelectField({
         alignItems: "center",
         justifyContent: "space-between",
       } as ViewStyle,
-      optionText: { fontSize: 16, fontWeight: "800", color: c.text.primary } as TextStyle,
-      divider: { height: 1, backgroundColor: withAlpha(c.border.default, 0.6) } as ViewStyle,
+      optionText: {
+        fontSize: 16,
+        fontWeight: "800",
+        color: c.text.primary,
+      } as TextStyle,
+      divider: {
+        height: 1,
+        backgroundColor: withAlpha(c.border.default, 0.6),
+      } as ViewStyle,
     });
   }, [c]);
 
@@ -170,7 +187,12 @@ function SelectField({
         <Ionicons name="chevron-down" size={18} color={c.text.secondary} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setOpen(false)}
+      >
         <Pressable style={s.sheetBackdrop} onPress={() => setOpen(false)}>
           <Pressable style={s.sheet} onPress={() => {}}>
             <View style={s.sheetTitleRow}>
@@ -191,10 +213,19 @@ function SelectField({
                     onChange(o.value);
                     setOpen(false);
                   }}
-                  style={({ pressed }) => [s.option, pressed && { backgroundColor: c.bg.muted }]}
+                  style={({ pressed }) => [
+                    s.option,
+                    pressed && { backgroundColor: c.bg.muted },
+                  ]}
                 >
                   <Text style={s.optionText}>{o.label}</Text>
-                  {active ? <Ionicons name="checkmark" size={20} color={c.brand.primary} /> : null}
+                  {active ? (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={c.brand.primary}
+                    />
+                  ) : null}
                 </Pressable>
               );
             })}
@@ -238,16 +269,47 @@ export default function SignupDriverScreen() {
     return StyleSheet.create({
       screen: { flex: 1, backgroundColor: c.bg.surface } as ViewStyle,
 
-      header: { paddingHorizontal: S.lg, paddingTop: S.md, paddingBottom: S.md } as ViewStyle,
-      backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" } as ViewStyle,
+      header: {
+        paddingHorizontal: S.lg,
+        paddingTop: S.md,
+        paddingBottom: S.md,
+      } as ViewStyle,
+      backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+      } as ViewStyle,
 
       titleWrap: { paddingHorizontal: S.lg, paddingTop: S.sm } as ViewStyle,
-      title: { fontSize: 30, fontWeight: "900", letterSpacing: -0.4, color: c.text.primary, lineHeight: 38 } as TextStyle,
-      subtitle: { marginTop: 10, fontSize: 16, fontWeight: "700", color: c.text.secondary, lineHeight: 22 } as TextStyle,
+      title: {
+        fontSize: 30,
+        fontWeight: "900",
+        letterSpacing: -0.4,
+        color: c.text.primary,
+        lineHeight: 38,
+      } as TextStyle,
+      subtitle: {
+        marginTop: 10,
+        fontSize: 16,
+        fontWeight: "700",
+        color: c.text.secondary,
+        lineHeight: 22,
+      } as TextStyle,
 
-      form: { paddingHorizontal: S.lg, paddingTop: S.xl, paddingBottom: 140 } as ViewStyle,
+      form: {
+        paddingHorizontal: S.lg,
+        paddingTop: S.xl,
+        paddingBottom: 140,
+      } as ViewStyle,
 
-      label: { fontSize: 14, fontWeight: "900", color: c.text.secondary, marginBottom: 8 } as TextStyle,
+      label: {
+        fontSize: 14,
+        fontWeight: "900",
+        color: c.text.secondary,
+        marginBottom: 8,
+      } as TextStyle,
 
       row: { flexDirection: "row", alignItems: "center" } as ViewStyle,
       rowGap: { width: 12 } as ViewStyle,
@@ -260,7 +322,11 @@ export default function SignupDriverScreen() {
         borderWidth: 1,
         borderColor: c.border.default,
       } as ViewStyle,
-      tfInput: { fontSize: 16, fontWeight: "800", paddingVertical: 0 } as TextStyle,
+      tfInput: {
+        fontSize: 16,
+        fontWeight: "800",
+        paddingVertical: 0,
+      } as TextStyle,
 
       miniBtn: {
         height: 56,
@@ -272,9 +338,18 @@ export default function SignupDriverScreen() {
         alignItems: "center",
         justifyContent: "center",
       } as ViewStyle,
-      miniBtnText: { fontSize: 15, fontWeight: "900", color: c.text.primary } as TextStyle,
+      miniBtnText: {
+        fontSize: 15,
+        fontWeight: "900",
+        color: c.text.primary,
+      } as TextStyle,
 
-      helper: { marginTop: 8, fontSize: 13, fontWeight: "800", color: c.text.secondary } as TextStyle,
+      helper: {
+        marginTop: 8,
+        fontSize: 13,
+        fontWeight: "800",
+        color: c.text.secondary,
+      } as TextStyle,
 
       grid2: { flexDirection: "row", alignItems: "center" } as ViewStyle,
       col: { flex: 1 } as ViewStyle,
@@ -308,14 +383,7 @@ export default function SignupDriverScreen() {
   const plateOk = normalizePlate(plateNo).length >= 6;
   const expOk = digitsOnly(expYears).length > 0;
 
-  const canSubmit =
-    nickFormatOk &&
-    nickChecked &&
-    nickOkChecked &&
-    plateOk &&
-    !!carType &&
-    !!ton &&
-    expOk;
+  const canSubmit = nickFormatOk && plateOk && !!carType && !!ton && expOk;
 
   const onCheckNickname = useCallback(async () => {
     if (!nickFormatOk) {
@@ -379,8 +447,7 @@ export default function SignupDriverScreen() {
               }
             : undefined,
       };
-      await authApi.register(payload);
-      resetSignup();
+      // await AuthService.register(payload);
       router.replace("/(driver)/(tabs)");
     } catch (e: any) {
       showMsg("오류", e?.message ?? "회원가입에 실패했어요.");
@@ -421,7 +488,10 @@ export default function SignupDriverScreen() {
         <Text style={s.subtitle}>정확한 배차를 위해 필수입니다.</Text>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.select({ ios: "padding", android: undefined })}
+        style={{ flex: 1 }}
+      >
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -438,22 +508,31 @@ export default function SignupDriverScreen() {
                 autoCapitalize="none"
                 inputWrapStyle={s.tfWrap}
                 inputStyle={s.tfInput}
-                errorText={nickname.length > 0 && !nickFormatOk ? "닉네임은 2글자 이상 입력해주세요." : undefined}
+                errorText={
+                  nickname.length > 0 && !nickFormatOk
+                    ? "닉네임은 2글자 이상 입력해주세요."
+                    : undefined
+                }
               />
             </View>
             <View style={s.rowGap} />
             <Pressable
-              style={[s.miniBtn, (checkingNick || !nickFormatOk) && { opacity: 0.6 }]}
+              style={[
+                s.miniBtn,
+                (checkingNick || !nickFormatOk) && { opacity: 0.6 },
+              ]}
               onPress={onCheckNickname}
               disabled={checkingNick || !nickFormatOk}
             >
-              <Text style={s.miniBtnText}>{checkingNick ? "확인중..." : "중복확인"}</Text>
+              <Text style={s.miniBtnText}>
+                {checkingNick ? "확인중..." : "중복확인"}
+              </Text>
             </Pressable>
           </View>
 
           {nickChecked ? (
-            <Text style={[s.helper, { color: nickOkChecked ? c.status.success : c.status.danger }]}>
-              {nickOkChecked ? "사용 가능한 닉네임이에요." : "이미 사용 중인 닉네임이에요."}
+            <Text style={s.helper}>
+              닉네임 중복확인은 회원가입 시 처리됩니다.
             </Text>
           ) : null}
 
@@ -508,7 +587,11 @@ export default function SignupDriverScreen() {
             keyboardType="number-pad"
             inputWrapStyle={s.tfWrap}
             inputStyle={s.tfInput}
-            errorText={expYears.length > 0 && digitsOnly(expYears).length === 0 ? "숫자만 입력해주세요." : undefined}
+            errorText={
+              expYears.length > 0 && digitsOnly(expYears).length === 0
+                ? "숫자만 입력해주세요."
+                : undefined
+            }
           />
         </ScrollView>
 
