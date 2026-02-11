@@ -47,7 +47,6 @@ export default function ShipperTabsLayout() {
         options={{
           title: "배차관리",
           tabBarIcon: ({ color, size }) => (
-            // ✅ 트럭은 Ionicons에 없어서 MaterialCommunityIcons 사용
             <MaterialCommunityIcons name="truck-outline" color={color} size={size} />
           ),
         }}
