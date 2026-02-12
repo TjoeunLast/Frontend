@@ -1,3 +1,4 @@
+import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import React, {
   createContext,
   useCallback,
@@ -8,7 +9,6 @@ import React, {
   type PropsWithChildren,
 } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { useAppTheme } from "@/shared/hooks/useAppTheme";
 
 type ToastTone = "neutral" | "success" | "warning" | "danger" | "info";
 
