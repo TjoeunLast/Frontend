@@ -9,10 +9,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-    TextInput,
-    View,
+  TextInput,
+  View,
 } from "react-native";
 
+import { addLocalShipperOrder } from "@/features/shipper/home/model/localShipperOrders";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { Button } from "@/shared/ui/base/Button";
 import { Card } from "@/shared/ui/base/Card";
@@ -461,6 +462,7 @@ export function ShipperCreateOrderStep1Screen() {
       Alert.alert("필수", "희망 운임을 입력 후 적용해주세요.");
       return;
     }
+    
 
     const requestSummary = [
       ...selectedRequestTags.map((x) => `#${x}`),
@@ -484,8 +486,19 @@ export function ShipperCreateOrderStep1Screen() {
     //   photos: photos.map(p => p.name)
     // }
 
-    Alert.alert("등록 준비 완료", "다음 단계로 이동합니다.");
-    router.push("/(shipper)/create-order/step2-cargo");
+    addLocalShipperOrder({
+      id: `local_${Date.now()}`,
+      status: "MATCHING",
+      from: startSelected,
+      to: endAddr.trim(),
+      distanceKm,
+      cargoSummary: `${ton.label} ${carType.label}${cargoDetail.trim() ? ` · ${cargoDetail.trim()}` : ""}`,
+      priceWon: appliedFare,
+      updatedAtLabel: "방금 전",
+    });
+
+    Alert.alert("등록 완료", "홈 화면으로 이동합니다.");
+    router.replace("/(shipper)/(tabs)");
   };
 
   const onSelectLoadDay = (v: LoadDayType) => {
@@ -912,7 +925,7 @@ export function ShipperCreateOrderStep1Screen() {
 
       {/* ✅ Bottom Sticky: 최종금액 항상 보이게 */}
       <View style={[s.bottomBar, { backgroundColor: c.bg.canvas, borderTopColor: c.border.default }]}>
-        <View style={[s.stickySummary, { backgroundColor: c.bg.surface, borderColor: c.border.default }]}>
+        <View style={[s.stickySummary, { borderColor: c.border.default, backgroundColor: c.bg.surface }]}>
           <View style={s.stickyRow}>
             <Text style={[s.stickyLabel, { color: c.text.secondary }]}>최종 결제 금액</Text>
             <Text style={[s.stickyTotal, { color: c.text.primary }]}>{won(totalPay)}</Text>
@@ -1079,8 +1092,8 @@ const s = StyleSheet.create({
   // photos
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 10 },
   photoBox: {
-    width: "48.3%",
-    height: 86,
+    width: "48%",
+    height: 80,
     borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
@@ -1111,7 +1124,7 @@ const s = StyleSheet.create({
 
   // pay grid
   payGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 10 },
-  payTile: { width: "48.3%", borderRadius: 16, borderWidth: 1, padding: 14 },
+  payTile: { width: "48%", borderRadius: 16, borderWidth: 1, padding: 14 },
   payTitle: { fontSize: 14, fontWeight: "900", marginBottom: 6 },
   payDesc: { fontSize: 12, fontWeight: "700" },
 
@@ -1131,18 +1144,20 @@ const s = StyleSheet.create({
     bottom: 0,
     padding: SP.pageX,
     borderTopWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     gap: 10,
   },
   stickySummary: {
     borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   stickyRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   stickyLabel: { fontSize: 12, fontWeight: "900" },
   stickyTotal: { fontSize: 18, fontWeight: "900" },
-  stickySubRow: { marginTop: 6, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  stickySubRow: { marginTop: 2, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   stickySub: { fontSize: 12, fontWeight: "800" },
 
 });
