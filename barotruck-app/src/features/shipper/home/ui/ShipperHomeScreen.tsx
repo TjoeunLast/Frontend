@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
+import { getLocalShipperOrders } from "@/features/shipper/home/model/localShipperOrders";
 import { useAppTheme } from "@/shared/hooks/useAppTheme";
 import { Button } from "@/shared/ui/base/Button";
 import { Card } from "@/shared/ui/base/Card";
@@ -51,50 +53,58 @@ export function ShipperHomeScreen() {
   const router = useRouter();
 
   const name = "김화주"; // TODO: authStore 연결 시 교체
+  const [liveOrders, setLiveOrders] = useState<LiveOrderItem[]>([]);
 
-  const summary: SummaryItem[] = useMemo(
-    () => [
-      { key: "matching", label: "배차대기", value: 1, icon: "time-outline" },
-      { key: "driving", label: "운송중", value: 2, icon: "car-outline" },
-      { key: "done", label: "완료", value: 15, icon: "checkmark-circle-outline" },
-    ],
-    []
+  useFocusEffect(
+    React.useCallback(() => {
+      const defaults: LiveOrderItem[] = [
+        {
+          id: "o1",
+          status: "MATCHING",
+          from: "서울 강남",
+          to: "부산 해운대",
+          distanceKm: 340,
+          cargoSummary: "11톤 윙바디 · 독차",
+          priceWon: 350000,
+          updatedAtLabel: "10분 전",
+        },
+        {
+          id: "o2",
+          status: "DRIVING",
+          from: "인천 남동",
+          to: "대전 유성",
+          distanceKm: 120,
+          cargoSummary: "5톤 카고 · 혼적",
+          priceWon: 180000,
+          updatedAtLabel: "1일 전",
+        },
+        {
+          id: "o3",
+          status: "DRIVING",
+          from: "경기 수원",
+          to: "서울 종로",
+          distanceKm: 45,
+          cargoSummary: "1톤 카고 · 독차",
+          priceWon: 60000,
+          updatedAtLabel: "1일 전",
+        },
+      ];
+      setLiveOrders([...getLocalShipperOrders(), ...defaults].slice(0, 20));
+    }, [])
   );
 
-  const liveOrders: LiveOrderItem[] = useMemo(
-    () => [
-      {
-        id: "o1",
-        status: "MATCHING",
-        from: "서울 강남",
-        to: "부산 해운대",
-        distanceKm: 340,
-        cargoSummary: "11톤 윙바디 · 독차",
-        priceWon: 350000,
-        updatedAtLabel: "10분 전",
-      },
-      {
-        id: "o2",
-        status: "DRIVING",
-        from: "인천 남동",
-        to: "대전 유성",
-        distanceKm: 120,
-        cargoSummary: "5톤 카고 · 혼적",
-        priceWon: 180000,
-        updatedAtLabel: "1일 전",
-      },
-      {
-        id: "o3",
-        status: "DRIVING",
-        from: "경기 수원",
-        to: "서울 종로",
-        distanceKm: 45,
-        cargoSummary: "1톤 카고 · 독차",
-        priceWon: 60000,
-        updatedAtLabel: "1일 전",
-      },
-    ],
-    []
+  const summary: SummaryItem[] = useMemo(
+    () => {
+      const matching = liveOrders.filter((x) => x.status === "MATCHING").length;
+      const driving = liveOrders.filter((x) => x.status === "DRIVING").length;
+      const done = liveOrders.filter((x) => x.status === "DONE").length;
+      return [
+        { key: "matching", label: "배차대기", value: matching, icon: "time-outline" },
+        { key: "driving", label: "운송중", value: driving, icon: "car-outline" },
+        { key: "done", label: "완료", value: done, icon: "checkmark-circle-outline" },
+      ];
+    },
+    [liveOrders]
   );
 
   const goCreateOrder = () => router.push("/(shipper)/create-order/step1-route");
